@@ -1,5 +1,7 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import type { Empresa } from '../types';
+import { useAuth } from './AuthContext';
+import { empresaApi } from '../api/empresa';
 
 interface EmpresaContextValue {
   empresaAtiva: Empresa | null;
@@ -9,7 +11,22 @@ interface EmpresaContextValue {
 const EmpresaContext = createContext<EmpresaContextValue | null>(null);
 
 export function EmpresaProvider({ children }: { children: ReactNode }) {
+  const { user, isAuthenticated } = useAuth();
   const [empresaAtiva, setEmpresaAtivaState] = useState<Empresa | null>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (empresaAtiva) return;
+
+    // ADMIN_EMPRESA/USUARIO: usa o empresaId do próprio JWT
+    // SUPER_ADMIN: tenta restaurar o último selecionado do localStorage
+    const empresaIdToLoad = user?.empresaId ?? localStorage.getItem('empresaId');
+    if (!empresaIdToLoad) return;
+
+    empresaApi.buscar(empresaIdToLoad)
+      .then(setEmpresaAtivaState)
+      .catch(() => {});
+  }, [isAuthenticated, user?.empresaId]);
 
   const setEmpresaAtiva = useCallback((empresa: Empresa) => {
     localStorage.setItem('empresaId', empresa.id);

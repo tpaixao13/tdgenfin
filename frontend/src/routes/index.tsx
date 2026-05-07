@@ -6,6 +6,8 @@ import Dashboard from '../pages/Dashboard';
 import Contas from '../pages/Contas';
 import ImportarExtrato from '../pages/ImportarExtrato';
 import Empresas from '../pages/Empresas';
+import Auditoria from '../pages/Auditoria';
+import Usuarios from '../pages/Usuarios';
 
 function PrivateRoute() {
   const { isAuthenticated } = useAuth();
@@ -31,6 +33,8 @@ export default function AppRoutes() {
             <Route path="/contas" element={<Contas />} />
             <Route path="/importar" element={<ImportarExtrato />} />
             <Route path="/empresas" element={<Empresas />} />
+            <Route path="/auditoria" element={<Auditoria />} />
+            <Route path="/usuarios" element={<Usuarios />} />
           </Route>
         </Route>
 

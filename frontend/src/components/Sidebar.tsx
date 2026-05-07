@@ -4,6 +4,8 @@ import {
   Landmark,
   Upload,
   Building2,
+  Shield,
+  Users,
   LogOut,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,11 +20,10 @@ export default function Sidebar() {
   const { user, logout } = useAuth();
 
   return (
-    <aside className="w-64 bg-slate-900 text-white flex flex-col min-h-screen">
+    <aside className="w-64 text-white flex flex-col min-h-screen" style={{ backgroundColor: '#0B2A4A' }}>
       {/* Logo */}
-      <div className="px-6 py-5 border-b border-slate-700">
-        <h1 className="text-xl font-bold text-white">TDGenFin</h1>
-        <p className="text-xs text-slate-400 mt-0.5">Gestão Financeira</p>
+      <div className="flex items-center justify-center py-4 px-6 border-b border-white/10">
+        <img src="/logo.png" alt="TDGenFin" className="w-full h-auto object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
       </div>
 
       {/* Navegação */}
@@ -44,6 +45,40 @@ export default function Sidebar() {
             {label}
           </NavLink>
         ))}
+
+        {/* Usuários — SUPER_ADMIN e ADMIN_EMPRESA */}
+        {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN_EMPRESA') && (
+          <NavLink
+            to="/usuarios"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-blue-600 text-white'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`
+            }
+          >
+            <Users size={18} />
+            Usuários
+          </NavLink>
+        )}
+
+        {/* Auditoria — SUPER_ADMIN e ADMIN_EMPRESA */}
+        {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN_EMPRESA') && (
+          <NavLink
+            to="/auditoria"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-blue-600 text-white'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`
+            }
+          >
+            <Shield size={18} />
+            Auditoria
+          </NavLink>
+        )}
 
         {/* Empresas — apenas SUPER_ADMIN */}
         {user?.role === 'SUPER_ADMIN' && (

@@ -23,6 +23,17 @@ export interface Empresa {
   createdAt: string;
 }
 
+export interface CreateEmpresaPayload {
+  nome: string;
+  cnpj: string;
+}
+
+export interface UpdateEmpresaPayload {
+  nome?: string;
+  cnpj?: string;
+  ativo?: boolean;
+}
+
 // ── Conta Bancária ────────────────────────────────────
 export interface ContaBancaria {
   id: string;
@@ -74,6 +85,58 @@ export interface ResumoEmpresa {
   saldoTotal: number;
   totalEntradas: number;
   totalSaidas: number;
+}
+
+// ── Usuários ──────────────────────────────────────────
+export interface UsuarioItem {
+  id: string;
+  nome: string;
+  email: string;
+  empresaId: string | null;
+  role: Role;
+  ativo: boolean;
+  createdAt: string;
+}
+
+export interface CreateUsuarioPayload {
+  empresaId?: string;
+  nome: string;
+  email: string;
+  senha: string;
+  role: Role;
+}
+
+export interface UpdateUsuarioPayload {
+  nome?: string;
+  ativo?: boolean;
+}
+
+// ── Auditoria ─────────────────────────────────────────
+export type AcaoAuditoria =
+  | 'IMPORTACAO_EXTRATO'
+  | 'CONCILIACAO_AUTOMATICA'
+  | 'CONCILIACAO_MANUAL'
+  | 'AJUSTE_SALDO'
+  | 'CRIACAO_CONTA'
+  | 'ATUALIZACAO_CONTA'
+  | 'CRIACAO_EMPRESA'
+  | 'ATUALIZACAO_EMPRESA'
+  | 'CRIACAO_USUARIO'
+  | 'LOGIN'
+  | 'ESTORNO_CONCILIACAO';
+
+export interface AuditoriaLog {
+  id: string;
+  usuarioId: string | null;
+  usuario: { id: string; nome: string; email: string } | null;
+  empresaId: string | null;
+  acao: AcaoAuditoria;
+  entidade: string | null;
+  entidadeId: string | null;
+  dadosAntes: Record<string, unknown> | null;
+  dadosDepois: Record<string, unknown> | null;
+  ipAddress: string | null;
+  createdAt: string;
 }
 
 // ── Paginação ─────────────────────────────────────────

@@ -23,29 +23,19 @@ export default function Login() {
   return (
     <div className="min-h-screen flex">
       {/* ── Lado esquerdo — imagem ── */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-slate-900">
+      <div className="hidden lg:flex lg:w-1/2 flex-col items-center justify-center p-12" style={{ backgroundColor: '#0B2A4A' }}>
         <img
-          src="/Designer.png"
+          src="/logo.png"
           alt="TDGenFin"
-          className="absolute inset-0 w-full h-full object-cover opacity-80"
+          className="w-2/3 h-auto object-contain mb-12"
+          style={{ filter: 'brightness(0) invert(1)' }}
         />
-        {/* Overlay com texto */}
-        <div className="relative z-10 flex flex-col justify-end p-12 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent w-full">
-          <div className="flex items-center gap-3 mb-4">
-            <img
-              src="/Designer.png"
-              alt="ícone"
-              className="w-10 h-10 rounded-lg object-cover ring-2 ring-white/30"
-            />
-            <span className="text-white text-xl font-bold">TDGenFin</span>
-          </div>
-          <h2 className="text-3xl font-bold text-white leading-tight">
-            Gestão financeira<br />para negócios
-          </h2>
-          <p className="text-slate-300 mt-3 text-sm">
-            Controle completo de extratos, conciliação e saldos bancários.
-          </p>
-        </div>
+        <h2 className="text-3xl font-bold text-white leading-tight text-center">
+          Gestão financeira<br />para negócios
+        </h2>
+        <p className="text-slate-300 mt-3 text-sm text-center">
+          Controle completo de extratos, conciliação e saldos bancários.
+        </p>
       </div>
 
       {/* ── Lado direito — formulário ── */}
@@ -53,32 +43,17 @@ export default function Login() {
         <div className="w-full max-w-sm">
 
           {/* Logo mobile (só aparece em telas menores) */}
-          <div className="flex items-center gap-3 justify-center mb-8 lg:hidden">
+          <div className="flex justify-center mb-8 lg:hidden">
             <img
-              src="/Designer.png"
-              alt="ícone"
-              className="w-10 h-10 rounded-lg object-cover"
+              src="/logo.png"
+              alt="TDGenFin"
+              className="h-16 object-contain"
             />
-            <div>
-              <p className="text-lg font-bold text-slate-800">TDGenFin</p>
-              <p className="text-xs text-slate-500">Gestão financeira para negócios</p>
-            </div>
           </div>
 
           {/* Card */}
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-            {/* Logo desktop dentro do card */}
-            <div className="hidden lg:flex items-center gap-3 mb-6">
-              <img
-                src="/Designer.png"
-                alt="ícone"
-                className="w-9 h-9 rounded-lg object-cover"
-              />
-              <div>
-                <p className="text-base font-bold text-slate-800">TDGenFin</p>
-                <p className="text-xs text-slate-400">Gestão financeira para negócios</p>
-              </div>
-            </div>
+
 
             <h2 className="text-xl font-semibold text-gray-800 mb-6">Entrar na conta</h2>
 
