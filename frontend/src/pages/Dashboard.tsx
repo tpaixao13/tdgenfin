@@ -53,25 +53,24 @@ export default function Dashboard() {
     enabled: isAuthenticated && hasEmpresa,
   });
 
-  // Limpa conta selecionada ao trocar de empresa
-  useEffect(() => {
-    setContaId('');
-  }, [empresaAtiva?.id]);
+  // contaIdAtual é '' imediatamente quando a conta não pertence à empresa atual
+  // (evita race condition do useEffect que só roda pós-render)
+  const contaIdAtual = contas?.some((c) => c.id === contaId) ? contaId : '';
 
-  // Seleciona a primeira conta automaticamente
+  // Seleciona a primeira conta automaticamente quando as contas carregam
   useEffect(() => {
-    if (contas && contas.length > 0 && !contaId) {
+    if (contas && contas.length > 0 && !contaIdAtual) {
       setContaId(contas[0].id);
     }
-  }, [contas, contaId]);
+  }, [contas, contaIdAtual]);
 
   const { resumoConta, resumoEmpresa } = useDashboardFinanceiro(
-    contaId,
+    contaIdAtual,
     periodo,
     empresaAtiva?.id,
   );
 
-  const contaAtiva = contas?.find((c) => c.id === contaId);
+  const contaAtiva = contas?.find((c) => c.id === contaIdAtual);
   const resumo = resumoConta.data;
   const empresa = resumoEmpresa.data;
 

@@ -13,7 +13,7 @@ export function useDashboardFinanceiro(
   const hasEmpresa = isSuperAdmin ? !!empresaAtivaId : true;
 
   const resumoConta = useQuery({
-    queryKey: ['dashboard', 'conta', contaId, periodo.dataInicio, periodo.dataFim],
+    queryKey: ['dashboard', 'conta', empresaAtivaId, contaId, periodo.dataInicio, periodo.dataFim],
     queryFn: () => dashboardApi.resumoConta(contaId, periodo.dataInicio, periodo.dataFim),
     enabled: isAuthenticated && !!contaId,
   });
