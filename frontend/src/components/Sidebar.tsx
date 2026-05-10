@@ -7,6 +7,7 @@ import {
   Shield,
   Users,
   TrendingDown,
+  GitMerge,
   LogOut,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -47,6 +48,23 @@ export default function Sidebar() {
             {label}
           </NavLink>
         ))}
+
+        {/* Conciliação — SUPER_ADMIN e ADMIN_EMPRESA */}
+        {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN_EMPRESA') && (
+          <NavLink
+            to="/conciliacao"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-blue-600 text-white'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`
+            }
+          >
+            <GitMerge size={18} />
+            Conciliação
+          </NavLink>
+        )}
 
         {/* Usuários — SUPER_ADMIN e ADMIN_EMPRESA */}
         {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN_EMPRESA') && (
