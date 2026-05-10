@@ -24,12 +24,13 @@ export default function Login() {
     <div className="min-h-screen flex">
       {/* ── Lado esquerdo — imagem ── */}
       <div className="hidden lg:flex lg:w-1/2 flex-col items-center justify-center p-12" style={{ backgroundColor: '#0B2A4A' }}>
-        <img
-          src="/logo.png?v=3"
-          alt="TDGenFin"
-          className="w-2/3 h-auto object-contain mb-12"
-          style={{ filter: 'brightness(0) invert(1)' }}
-        />
+        <div className="bg-white rounded-2xl px-6 py-4 mb-12 w-2/3 flex items-center justify-center">
+          <img
+            src="/logo.png?v=3"
+            alt="TDGenFin"
+            className="h-14 w-auto object-contain"
+          />
+        </div>
         <h2 className="text-3xl font-bold text-white leading-tight text-center">
           Gestão financeira<br />para negócios
         </h2>
