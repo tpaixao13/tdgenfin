@@ -3,11 +3,11 @@ version: '3.8'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: tdgenfin-db
+    container_name: corefinance-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: tdgenfin
+      POSTGRES_DB: corefinance
     ports:
       - "5432:5432"
     volumes:
@@ -15,14 +15,14 @@ services:
       - ./backend/src/database/migrations/001_initial_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
       - ./backend/src/database/migrations/002_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d tdgenfin"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d corefinance"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   redis:
     image: redis:7-alpine
-    container_name: tdgenfin-redis
+    container_name: corefinance-redis
     ports:
       - "6379:6379"
     volumes:

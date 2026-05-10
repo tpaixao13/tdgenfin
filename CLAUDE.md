@@ -1,4 +1,4 @@
-# TDGenFin — Instruções para o Claude
+# CoreFinance — Instruções para o Claude
 
 ## Comportamento obrigatório
 
@@ -10,10 +10,10 @@
 
 ## Projeto
 
-**TDGenFin** — Sistema financeiro SaaS multi-tenant full-stack.
+**CoreFinance** — Sistema financeiro SaaS multi-tenant full-stack.
 
-- **Repositório:** https://github.com/tpaixao13/tdgenfin
-- **Diretório:** C:\Users\tiago.paixao\Documents\Python\TDGenFin\
+- **Repositório:** https://github.com/tpaixao13/corefinance
+- **Diretório:** C:\Users\tiago.paixao\Documents\Python\TDGenFin\ (renomear para CoreFinance)
 - **Branch principal:** main
 
 ---
@@ -41,15 +41,14 @@
 **Roles:** `SUPER_ADMIN`, `ADMIN_EMPRESA`, `USUARIO` — controlados via JWT payload + `RolesGuard`.
 
 **Banco de dados:** PostgreSQL 16 local
-- Banco: `tdgenfin`
+- Banco: `tdgenfin` (local dev) / `corefinance` (produção VPS)
 - Usuário: `postgres`
 - Senha: `postgres`
-- Executar SQL: `& "C:\Program Files\PostgreSQL\16\bin\psql.exe" -U postgres -d tdgenfin`
+- Executar SQL: `$env:PGPASSWORD="postgres"; & "C:\Program Files\PostgreSQL\16\bin\psql.exe" -U postgres -d tdgenfin`
 - Para hash bcrypt: `node -e "const bcrypt = require('bcryptjs'); bcrypt.hash('senha', 12).then(h => console.log(h));"` dentro de backend/
 
-**Credenciais de teste:**
-- `admin@tdgenfin.com` / `Admin@123` — SUPER_ADMIN
-- `admin@empresa-demo.com` / `Admin@123` — ADMIN_EMPRESA (Empresa Demo Ltda)
+**Credenciais de produção:**
+- `admin@corefinance.com.br` — SUPER_ADMIN
 
 ---
 
@@ -62,9 +61,11 @@
 - **Proxy:** /api → http://localhost:3000 (configurado no vite.config.ts)
 
 **Telas implementadas:**
-- `/` — Dashboard (saldo, entradas, saídas, conciliação por conta)
+- `/` — Dashboard Financeiro Consolidado (filtro de período, resumo por conta, cards de indicadores)
 - `/contas` — Contas Bancárias (listagem e gestão)
 - `/importar` — Importar Extrato (drag-and-drop, OFX/CSV/XLSX)
+- `/despesas` — Despesas com filtros por conta, período e status
+- `/conciliacao` — Conciliação automática e manual
 - `/usuarios` — Gestão de Usuários (SUPER_ADMIN + ADMIN_EMPRESA)
 - `/empresas` — Gestão de Empresas (SUPER_ADMIN only)
 - `/auditoria` — Log de auditoria com filtro e paginação
@@ -73,10 +74,10 @@
 **Estrutura de pastas:**
 ```
 frontend/src/
-├── api/          — chamadas Axios por domínio (auth, empresa, contas, extratos, usuarios, auditoria, dashboard)
-├── components/   — Sidebar, Header, Layout, CardSaldo, tabelas e forms modais
+├── api/          — chamadas Axios por domínio (auth, empresa, contas, extratos, usuarios, auditoria, dashboard, conciliacao, despesas)
+├── components/   — Sidebar, Header, Layout, CardSaldo, CardIndicador, FiltroPeriodo, ResumoPorConta, tabelas e forms modais
 ├── contexts/     — AuthContext (JWT + localStorage), EmpresaContext (auto-carrega empresa)
-├── hooks/        — useAuth, useEmpresa, useUsuarios
+├── hooks/        — useAuth, useEmpresa, useUsuarios, useConciliacao, useDespesas, useDashboardFinanceiro
 ├── pages/        — uma página por rota
 ├── routes/       — PrivateRoute, PublicRoute, AppRoutes
 └── types/        — index.ts com todos os tipos TypeScript centralizados
@@ -87,11 +88,18 @@ frontend/src/
 **EmpresaContext:** ao logar, ADMIN_EMPRESA/USUARIO têm empresa setada automaticamente via `empresaId` do JWT. SUPER_ADMIN seleciona manualmente no Header e restaura do localStorage.
 
 **Sidebar — visibilidade por role:**
-- Todos: Dashboard, Contas, Importar Extrato
-- SUPER_ADMIN + ADMIN_EMPRESA: Usuários, Auditoria
+- Todos: Dashboard, Contas, Importar Extrato, Despesas
+- SUPER_ADMIN + ADMIN_EMPRESA: Conciliação, Usuários, Auditoria
 - SUPER_ADMIN: Empresas
 
 **Visual:**
 - Cor principal: `#0B2A4A` (sidebar e painel esquerdo do login)
-- Logo: `frontend/public/logo.png` (transparente, `filter: brightness(0) invert(1)` no sidebar)
-- Favicon: `frontend/public/favicon.png` (logo com fundo branco)
+- Logo: `frontend/public/logo.png` (fundo branco, exibido em container branco arredondado)
+- Favicon: `frontend/public/favicon.png`
+
+## Segurança implementada (produção)
+
+- Rate limiting: 5 tentativas/min no login (`@nestjs/throttler`)
+- JWT_SECRET validado na inicialização (process.exit se fraco ou padrão)
+- CORS_ORIGIN obrigatório em produção (process.exit se ausente)
+- `synchronize: false` garantido para NODE_ENV=production e prod
