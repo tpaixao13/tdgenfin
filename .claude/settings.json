@@ -11,7 +11,30 @@
       "PowerShell(Get-Process node -ErrorAction SilentlyContinue)",
       "PowerShell(Stop-Process -Force)",
       "Bash(git init *)",
-      "Bash(git remote *)"
+      "Bash(git remote *)",
+      "Bash(git config *)",
+      "Bash(git commit -m ' *)",
+      "Bash(npm create *)",
+      "PowerShell(Copy-Item \"C:\\\\Users\\\\tiago.paixao\\\\Documents\\\\Python\\\\TDGenFin\\\\Designer.png\" \"C:\\\\Users\\\\tiago.paixao\\\\Documents\\\\Python\\\\TDGenFin\\\\frontend\\\\public\\\\Designer.png\")",
+      "Bash(git add *)",
+      "Bash(Rename-Item \"C:\\\\Users\\\\tiago.paixao\\\\Documents\\\\Python\\\\TDGenFin\\\\frontend\\\\public\\\\Designer.png\" \"logo.png\")",
+      "PowerShell(Rename-Item \"C:\\\\Users\\\\tiago.paixao\\\\Documents\\\\Python\\\\TDGenFin\\\\frontend\\\\public\\\\Designer.png\" \"logo.png\")",
+      "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\16\\\\bin\\\\psql.exe\" -U postgres -d tdgenfin -c \"UPDATE usuario SET senha_hash = '\\\\$2b\\\\$12\\\\$q7VkIxpFxVWRIWPOoUJbFOOQPL6sMdpBLxrpuGHKDdTHHyqZh3n.6' WHERE email = 'joao@empresa-demo.com';\")",
+      "PowerShell($env:PGPASSWORD = \"postgres\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\16\\\\bin\\\\psql.exe\" -U postgres -d tdgenfin -c \"UPDATE usuario SET senha_hash = '\\\\$2b\\\\$12\\\\$q7VkIxpFxVWRIWPOoUJbFOOQPL6sMdpBLxrpuGHKDdTHHyqZh3n.6' WHERE email = 'joao@empresa-demo.com' RETURNING email, ativo;\")",
+      "PowerShell($env:PGPASSWORD = \"postgres\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\16\\\\bin\\\\psql.exe\" -U postgres -d tdgenfin -c \"SELECT u.nome, u.email, u.role, e.nome AS empresa FROM usuario u LEFT JOIN empresa e ON e.id = u.empresa_id WHERE u.email = 'joao@empresa-demo.com';\")",
+      "PowerShell($env:PGPASSWORD = \"postgres\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\16\\\\bin\\\\psql.exe\" -U postgres -d tdgenfin -c \"UPDATE usuario SET senha_hash = '$2b$12$MwJ./k4lB1eMyRNR8s0zeOzJ3cza49kgL0.CMlqgATYb7Id/uzjWm' WHERE email = 'joao@empresa-demo.com' RETURNING email;\")",
+      "PowerShell($env:PGPASSWORD = \"postgres\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\16\\\\bin\\\\psql.exe\" -U postgres -d tdgenfin -c \"SELECT senha_hash FROM usuario WHERE email = 'joao@empresa-demo.com';\")",
+      "PowerShell($env:PGPASSWORD = \"postgres\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\16\\\\bin\\\\psql.exe\" -U postgres -d tdgenfin -f \"C:\\\\Users\\\\tiago.paixao\\\\Documents\\\\Python\\\\TDGenFin\\\\update_senha.sql\")",
+      "Read(//c/Users/tiago.paixao/.claude/projects/c--Users-tiago-paixao-Documents-Python-TDGenFin/memory/**)",
+      "Bash(curl -s http://localhost:3000/api/v1)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(curl -s -X POST http://localhost:3000/api/v1/auth/login -H \"Content-Type: application/json\" -d \"{\\\\\"email\\\\\":\\\\\"admin@tdgenfin.com\\\\\",\\\\\"senha\\\\\":\\\\\"Admin@123\\\\\"}\")",
+      "Bash(curl -s http://localhost:3000/api/v1/contas-bancarias -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmMWUyZDNjNC1iNWE2LTc4OTAtZmVkYy1iYTA5ODc2NTQzMjEiLCJlbWFpbCI6ImFkbWluQHRkZ2VuZmluLmNvbSIsInJvbGUiOiJTVVBFUl9BRE1JTiIsImVtcHJlc2FJZCI6bnVsbCwiaWF0IjoxNzc4MTk4OTkxLCJleHAiOjE3Nzg4MDM3OTF9.E8xRH9bjGf3hScNj1I8UDQG8BAMc3irK1OOcACeV1J4\")",
+      "Bash(python -m json.tool)",
+      "Bash(curl -s \"http://localhost:3000/api/v1/extratos/lancamentos/b2c3d4e5-f6a7-8901-bcde-f01234567890?status=PENDENTE\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmMWUyZDNjNC1iNWE2LTc4OTAtZmVkYy1iYTA5ODc2NTQzMjEiLCJlbWFpbCI6ImFkbWluQHRkZ2VuZmluLmNvbSIsInJvbGUiOiJTVVBFUl9BRE1JTiIsImVtcHJlc2FJZCI6bnVsbCwiaWF0IjoxNzc4MTk4OTkxLCJleHAiOjE3Nzg4MDM3OTF9.E8xRH9bjGf3hScNj1I8UDQG8BAMc3irK1OOcACeV1J4\")"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\tiago.paixao\\.claude\\projects\\c--Users-tiago-paixao-Documents-Python-TDGenFin\\memory"
     ]
   }
 }
