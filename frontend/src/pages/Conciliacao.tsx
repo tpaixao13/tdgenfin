@@ -14,7 +14,7 @@ const LIMIT = 50;
 const FILTROS_VAZIOS = { dataInicio: '', dataFim: '', tipo: '' as const };
 
 export default function Conciliacao() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [page, setPage] = useState(1);
   const [filtros, setFiltros] = useState<FiltrosConciliacao>({
     contaId: '',
@@ -101,6 +101,7 @@ export default function Conciliacao() {
             pendentes={pendentes}
             contaId={filtros.contaId}
             banco={contaAtiva ? `${contaAtiva.banco} — ${contaAtiva.numero}` : ''}
+            canVincularErp={user?.role === 'ADMIN_EMPRESA'}
           />
         )}
       </div>

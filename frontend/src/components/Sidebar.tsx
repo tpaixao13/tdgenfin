@@ -7,6 +7,7 @@ import {
   Shield,
   Users,
   TrendingDown,
+  TrendingUp,
   GitMerge,
   Receipt,
   LogOut,
@@ -19,6 +20,7 @@ const navItems = [
   { to: '/importar', icon: Upload, label: 'Importar Extrato' },
   { to: '/despesas', icon: TrendingDown, label: 'Despesas' },
   { to: '/contas-pagar', icon: Receipt, label: 'Contas a Pagar' },
+  { to: '/contas-receber', icon: TrendingUp, label: 'Contas a Receber' },
 ];
 
 export default function Sidebar() {

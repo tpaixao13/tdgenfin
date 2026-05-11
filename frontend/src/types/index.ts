@@ -193,6 +193,39 @@ export interface UpdateContaPagarPayload {
   status?: StatusContaPagar;
 }
 
+// ── Contas a Receber ──────────────────────────────────
+export type StatusContaReceber = 'ABERTA' | 'RECEBIDA' | 'ATRASADA' | 'CANCELADA';
+
+export interface ContaReceber {
+  id: string;
+  empresaId: string;
+  descricao: string;
+  cliente: string | null;
+  valor: number;
+  dataRecebimento: string;
+  recorrencia: RecorrenciaContaPagar;
+  status: StatusContaReceber;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateContaReceberPayload {
+  descricao: string;
+  cliente?: string;
+  valor: number;
+  dataRecebimento: string;
+  recorrencia: RecorrenciaContaPagar;
+}
+
+export interface UpdateContaReceberPayload {
+  descricao?: string;
+  cliente?: string;
+  valor?: number;
+  dataRecebimento?: string;
+  recorrencia?: RecorrenciaContaPagar;
+  status?: StatusContaReceber;
+}
+
 // ── Paginação ─────────────────────────────────────────
 export interface Paginated<T> {
   data: T[];

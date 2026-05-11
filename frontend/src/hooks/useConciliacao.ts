@@ -35,3 +35,17 @@ export function useConciliarAutomatica(contaId: string) {
     },
   });
 }
+
+export function useVincularErp(contaId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ extratoId, contaErpId, tipo }: { extratoId: string; contaErpId: string; tipo: 'PAGAR' | 'RECEBER' }) =>
+      conciliacaoApi.vincularErp(extratoId, contaErpId, tipo),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['conciliacao', 'pendentes', contaId] });
+      qc.invalidateQueries({ queryKey: ['contas-pagar'] });
+      qc.invalidateQueries({ queryKey: ['contas-receber'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+}

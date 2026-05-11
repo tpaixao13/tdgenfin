@@ -24,4 +24,9 @@ export const conciliacaoApi = {
     api
       .post<ResultadoAutomatica>(`/conciliacao/automatica/${contaId}`)
       .then((r) => r.data),
+
+  vincularErp: (extratoId: string, contaErpId: string, tipo: 'PAGAR' | 'RECEBER') =>
+    api
+      .post(`/conciliacoes/${extratoId}/vincular`, { contaErpId, tipo })
+      .then((r) => r.data),
 };
