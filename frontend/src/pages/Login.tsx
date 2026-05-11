@@ -31,11 +31,8 @@ export default function Login() {
           style={{ height: '106px' }}
         />
         <h2 className="text-3xl font-bold text-white leading-tight text-center">
-          Gestão financeira<br />para negócios
+          Sistema essencial de finanças
         </h2>
-        <p className="text-slate-300 mt-3 text-sm text-center">
-          Controle completo de extratos, conciliação e saldos bancários.
-        </p>
       </div>
 
       {/* ── Lado direito — formulário ── */}
