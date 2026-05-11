@@ -26,9 +26,7 @@ export default function Sidebar() {
     <aside className="w-64 text-white flex flex-col min-h-screen" style={{ backgroundColor: '#0B2A4A' }}>
       {/* Logo */}
       <div className="flex items-center justify-center py-4 px-6 border-b border-white/10">
-        <div className="bg-white rounded-xl px-3 py-2 w-full flex items-center justify-center">
-          <img src="/logo.png?v=4" alt="TDGenFin" className="h-10 w-auto object-contain" />
-        </div>
+        <img src="/logo.png?v=4" alt="TDGenFin" className="h-10 w-auto object-contain" />
       </div>
 
       {/* Navegação */}
