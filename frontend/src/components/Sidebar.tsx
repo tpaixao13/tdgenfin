@@ -8,6 +8,7 @@ import {
   Users,
   TrendingDown,
   GitMerge,
+  Receipt,
   LogOut,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -17,6 +18,7 @@ const navItems = [
   { to: '/contas', icon: Landmark, label: 'Contas' },
   { to: '/importar', icon: Upload, label: 'Importar Extrato' },
   { to: '/despesas', icon: TrendingDown, label: 'Despesas' },
+  { to: '/contas-pagar', icon: Receipt, label: 'Contas a Pagar' },
 ];
 
 export default function Sidebar() {

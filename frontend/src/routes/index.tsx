@@ -10,6 +10,7 @@ import Auditoria from '../pages/Auditoria';
 import Usuarios from '../pages/Usuarios';
 import Despesas from '../pages/Despesas';
 import Conciliacao from '../pages/Conciliacao';
+import ContasPagar from '../pages/ContasPagar';
 
 function PrivateRoute() {
   const { isAuthenticated } = useAuth();
@@ -39,6 +40,7 @@ export default function AppRoutes() {
             <Route path="/usuarios" element={<Usuarios />} />
             <Route path="/despesas" element={<Despesas />} />
             <Route path="/conciliacao" element={<Conciliacao />} />
+            <Route path="/contas-pagar" element={<ContasPagar />} />
           </Route>
         </Route>
 

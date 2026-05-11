@@ -159,6 +159,40 @@ export interface AuditoriaLog {
   createdAt: string;
 }
 
+// ── Contas a Pagar ────────────────────────────────────
+export type StatusContaPagar = 'ABERTA' | 'PAGA' | 'ATRASADA' | 'CANCELADA';
+export type RecorrenciaContaPagar = 'NENHUMA' | 'SEMANAL' | 'MENSAL' | 'TRIMESTRAL' | 'ANUAL';
+
+export interface ContaPagar {
+  id: string;
+  empresaId: string;
+  descricao: string;
+  fornecedor: string | null;
+  valor: number;
+  dataVencimento: string;
+  recorrencia: RecorrenciaContaPagar;
+  status: StatusContaPagar;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateContaPagarPayload {
+  descricao: string;
+  fornecedor?: string;
+  valor: number;
+  dataVencimento: string;
+  recorrencia: RecorrenciaContaPagar;
+}
+
+export interface UpdateContaPagarPayload {
+  descricao?: string;
+  fornecedor?: string;
+  valor?: number;
+  dataVencimento?: string;
+  recorrencia?: RecorrenciaContaPagar;
+  status?: StatusContaPagar;
+}
+
 // ── Paginação ─────────────────────────────────────────
 export interface Paginated<T> {
   data: T[];
