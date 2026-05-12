@@ -41,16 +41,6 @@ export class UsuariosController {
     return this.usuariosService.listar(user);
   }
 
-  @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN_EMPRESA)
-  buscar(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: { role: Role; empresaId: string },
-  ) {
-    const empresaId = user.role === Role.SUPER_ADMIN ? undefined : user.empresaId;
-    return this.usuariosService.buscarPorId(id, empresaId);
-  }
-
   @Get('minhas-permissoes')
   minhasPermissoes(@CurrentUser() user: { id: string; role: Role }) {
     if (user.role === Role.SUPER_ADMIN) {
@@ -65,6 +55,16 @@ export class UsuariosController {
   @Roles(Role.SUPER_ADMIN)
   listarComPermissoes() {
     return this.usuariosService.listarComPermissoes();
+  }
+
+  @Get(':id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN_EMPRESA)
+  buscar(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: { role: Role; empresaId: string },
+  ) {
+    const empresaId = user.role === Role.SUPER_ADMIN ? undefined : user.empresaId;
+    return this.usuariosService.buscarPorId(id, empresaId);
   }
 
   @Post(':id/permissoes')
