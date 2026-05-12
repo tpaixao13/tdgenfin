@@ -17,21 +17,58 @@ export type Role = 'SUPER_ADMIN' | 'ADMIN_EMPRESA' | 'USUARIO';
 // ── Empresa ───────────────────────────────────────────
 export interface Empresa {
   id: string;
+  // Identificação
   nome: string;
+  nomeFantasia?: string;
   cnpj: string;
+  inscricaoEstadual?: string;
+  inscricaoMunicipal?: string;
+  // Endereço
+  cep?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  pais?: string;
+  // Contato
+  telefone?: string;
+  email?: string;
+  site?: string;
+  // Status
   ativo: boolean;
   createdAt: string;
 }
 
 export interface CreateEmpresaPayload {
   nome: string;
+  nomeFantasia?: string;
   cnpj: string;
+  inscricaoEstadual?: string;
+  inscricaoMunicipal?: string;
+  cep?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  pais?: string;
+  telefone?: string;
+  email?: string;
+  site?: string;
 }
 
-export interface UpdateEmpresaPayload {
-  nome?: string;
-  cnpj?: string;
+export interface UpdateEmpresaPayload extends Partial<CreateEmpresaPayload> {
   ativo?: boolean;
+}
+
+export interface EnderecoCep {
+  logradouro: string;
+  bairro: string;
+  cidade: string;
+  estado: string;
 }
 
 // ── Conta Bancária ────────────────────────────────────

@@ -6,6 +6,8 @@ import Dashboard from '../pages/Dashboard';
 import Contas from '../pages/Contas';
 import ImportarExtrato from '../pages/ImportarExtrato';
 import Empresas from '../pages/Empresas';
+import EmpresaView from '../pages/EmpresaView';
+import EmpresaFormPage from '../pages/EmpresaForm';
 import Auditoria from '../pages/Auditoria';
 import Usuarios from '../pages/Usuarios';
 import Despesas from '../pages/Despesas';
@@ -37,6 +39,9 @@ export default function AppRoutes() {
             <Route path="/contas" element={<Contas />} />
             <Route path="/importar" element={<ImportarExtrato />} />
             <Route path="/empresas" element={<Empresas />} />
+            <Route path="/empresas/nova" element={<EmpresaFormPage />} />
+            <Route path="/empresas/:id" element={<EmpresaView />} />
+            <Route path="/empresas/:id/editar" element={<EmpresaFormPage />} />
             <Route path="/auditoria" element={<Auditoria />} />
             <Route path="/usuarios" element={<Usuarios />} />
             <Route path="/despesas" element={<Despesas />} />

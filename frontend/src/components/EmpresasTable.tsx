@@ -1,21 +1,20 @@
-import { Pencil } from 'lucide-react';
+import { Eye, Pencil } from 'lucide-react';
 import type { Empresa } from '../types';
 import { useAtualizarEmpresa } from '../hooks/useEmpresa';
 
 function formatarData(iso: string) {
   return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
+    day: '2-digit', month: '2-digit', year: 'numeric',
   }).format(new Date(iso));
 }
 
 interface Props {
   empresas: Empresa[];
+  onVisualizar: (empresa: Empresa) => void;
   onEditar: (empresa: Empresa) => void;
 }
 
-export default function EmpresasTable({ empresas, onEditar }: Props) {
+export default function EmpresasTable({ empresas, onVisualizar, onEditar }: Props) {
   const { mutate: atualizar, isPending } = useAtualizarEmpresa();
 
   function toggleAtivo(emp: Empresa) {
@@ -47,7 +46,12 @@ export default function EmpresasTable({ empresas, onEditar }: Props) {
         <tbody className="divide-y divide-gray-100">
           {empresas.map((emp) => (
             <tr key={emp.id} className="hover:bg-gray-50 transition-colors">
-              <td className="py-3 pr-4 font-medium text-gray-800">{emp.nome}</td>
+              <td className="py-3 pr-4">
+                <p className="font-medium text-gray-800">{emp.nome}</p>
+                {emp.nomeFantasia && (
+                  <p className="text-xs text-gray-400">{emp.nomeFantasia}</p>
+                )}
+              </td>
               <td className="py-3 pr-4 text-gray-500 font-mono text-xs">{emp.cnpj}</td>
               <td className="py-3 pr-4">
                 <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -56,14 +60,19 @@ export default function EmpresasTable({ empresas, onEditar }: Props) {
                   {emp.ativo ? 'Ativa' : 'Inativa'}
                 </span>
               </td>
-              <td className="py-3 pr-4 text-gray-500">
-                {formatarData(emp.createdAt)}
-              </td>
+              <td className="py-3 pr-4 text-gray-500">{formatarData(emp.createdAt)}</td>
               <td className="py-3">
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => onEditar(emp)}
+                    onClick={() => onVisualizar(emp)}
                     className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors"
+                  >
+                    <Eye size={13} />
+                    Visualizar
+                  </button>
+                  <button
+                    onClick={() => onEditar(emp)}
+                    className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
                   >
                     <Pencil size={13} />
                     Editar
