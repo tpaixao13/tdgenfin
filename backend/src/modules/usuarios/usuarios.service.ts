@@ -5,11 +5,17 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Usuario, Role } from './usuario.entity';
+import {
+  UsuarioPermissao,
+  ChavePermissao,
+  PERMISSOES_DESCRICOES,
+} from './usuario-permissao.entity';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
+import { UpdatePermissaoDto } from './dto/update-permissao.dto';
 import { AuditoriaService } from '../auditoria/auditoria.service';
 import { AcaoAuditoria } from '../auditoria/auditoria-log.entity';
 
@@ -18,6 +24,8 @@ export class UsuariosService {
   constructor(
     @InjectRepository(Usuario)
     private readonly usuarioRepo: Repository<Usuario>,
+    @InjectRepository(UsuarioPermissao)
+    private readonly permissaoRepo: Repository<UsuarioPermissao>,
     private readonly auditoriaService: AuditoriaService,
   ) {}
 
@@ -72,6 +80,66 @@ export class UsuariosService {
 
     const { senhaHash: _, ...resultado } = usuario;
     return resultado;
+  }
+
+  async listarComPermissoes() {
+    const usuarios = await this.usuarioRepo.find({
+      relations: ['empresa'],
+      order: { nome: 'ASC' },
+    });
+
+    const ids = usuarios.map((u) => u.id);
+    const todasPermissoes = ids.length
+      ? await this.permissaoRepo.find({ where: { usuarioId: In(ids) } })
+      : [];
+
+    const permissoesPorUsuario = new Map<string, Map<string, boolean>>();
+    for (const p of todasPermissoes) {
+      if (!permissoesPorUsuario.has(p.usuarioId)) {
+        permissoesPorUsuario.set(p.usuarioId, new Map());
+      }
+      permissoesPorUsuario.get(p.usuarioId)!.set(p.chave, p.habilitado);
+    }
+
+    return usuarios.map((u) => {
+      const mapa = permissoesPorUsuario.get(u.id) ?? new Map<string, boolean>();
+      const permissoes = Object.values(ChavePermissao).map((chave) => ({
+        chave,
+        descricao: PERMISSOES_DESCRICOES[chave],
+        habilitado: mapa.get(chave) ?? false,
+      }));
+      return {
+        usuarioId: u.id,
+        nome: u.nome,
+        email: u.email,
+        empresa: (u.empresa as any)?.nome ?? null,
+        role: u.role,
+        ativo: u.ativo,
+        permissoes,
+      };
+    });
+  }
+
+  async atualizarPermissao(
+    usuarioId: string,
+    dto: UpdatePermissaoDto,
+    operadorId: string,
+  ): Promise<void> {
+    const usuario = await this.usuarioRepo.findOne({ where: { id: usuarioId } });
+    if (!usuario) throw new NotFoundException('Usuário não encontrado');
+
+    await this.permissaoRepo.upsert(
+      { usuarioId, chave: dto.permissao, habilitado: dto.habilitado },
+      ['usuarioId', 'chave'],
+    );
+
+    await this.auditoriaService.registrar({
+      usuarioId: operadorId,
+      acao: AcaoAuditoria.ALTERACAO_PERMISSAO,
+      entidade: 'usuario_permissao',
+      entidadeId: usuarioId,
+      dadosDepois: { permissao: dto.permissao, habilitado: dto.habilitado },
+    });
   }
 
   async atualizar(id: string, dto: UpdateUsuarioDto, empresaId?: string): Promise<Omit<Usuario, 'senhaHash'>> {

@@ -7,6 +7,8 @@ import {
   Body,
   UseGuards,
   ParseUUIDPipe,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -16,6 +18,7 @@ import { Role } from './usuario.entity';
 import { UsuariosService } from './usuarios.service';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
+import { UpdatePermissaoDto } from './dto/update-permissao.dto';
 
 @Controller('usuarios')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -45,6 +48,23 @@ export class UsuariosController {
   ) {
     const empresaId = user.role === Role.SUPER_ADMIN ? undefined : user.empresaId;
     return this.usuariosService.buscarPorId(id, empresaId);
+  }
+
+  @Get('permissoes')
+  @Roles(Role.SUPER_ADMIN)
+  listarComPermissoes() {
+    return this.usuariosService.listarComPermissoes();
+  }
+
+  @Post(':id/permissoes')
+  @Roles(Role.SUPER_ADMIN)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  atualizarPermissao(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdatePermissaoDto,
+    @CurrentUser() user: { id: string; role: Role },
+  ) {
+    return this.usuariosService.atualizarPermissao(id, dto, user.id);
   }
 
   @Patch(':id')

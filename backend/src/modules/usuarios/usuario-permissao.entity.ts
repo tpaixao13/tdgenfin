@@ -1,0 +1,82 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Unique,
+} from 'typeorm';
+import { Usuario } from './usuario.entity';
+
+export enum ChavePermissao {
+  DASHBOARD_VIEW = 'DASHBOARD_VIEW',
+  EXTRATO_IMPORT = 'EXTRATO_IMPORT',
+  CONCILIACAO_EXECUTAR = 'CONCILIACAO_EXECUTAR',
+  CONTAS_PAGAR_VIEW = 'CONTAS_PAGAR_VIEW',
+  CONTAS_PAGAR_EDIT = 'CONTAS_PAGAR_EDIT',
+  CONTAS_RECEBER_VIEW = 'CONTAS_RECEBER_VIEW',
+  CONTAS_RECEBER_EDIT = 'CONTAS_RECEBER_EDIT',
+  AUDITORIA_VIEW = 'AUDITORIA_VIEW',
+}
+
+export const PERMISSOES_DESCRICOES: Record<ChavePermissao, string> = {
+  [ChavePermissao.DASHBOARD_VIEW]: 'Ver Dashboard',
+  [ChavePermissao.EXTRATO_IMPORT]: 'Importar Extrato',
+  [ChavePermissao.CONCILIACAO_EXECUTAR]: 'Executar Conciliação',
+  [ChavePermissao.CONTAS_PAGAR_VIEW]: 'Ver Contas a Pagar',
+  [ChavePermissao.CONTAS_PAGAR_EDIT]: 'Editar Contas a Pagar',
+  [ChavePermissao.CONTAS_RECEBER_VIEW]: 'Ver Contas a Receber',
+  [ChavePermissao.CONTAS_RECEBER_EDIT]: 'Editar Contas a Receber',
+  [ChavePermissao.AUDITORIA_VIEW]: 'Ver Auditoria',
+};
+
+export const PERMISSOES_GRUPOS: { label: string; chaves: ChavePermissao[] }[] = [
+  {
+    label: 'Visualização',
+    chaves: [ChavePermissao.DASHBOARD_VIEW, ChavePermissao.AUDITORIA_VIEW],
+  },
+  {
+    label: 'Extratos',
+    chaves: [ChavePermissao.EXTRATO_IMPORT],
+  },
+  {
+    label: 'Conciliação',
+    chaves: [ChavePermissao.CONCILIACAO_EXECUTAR],
+  },
+  {
+    label: 'Contas a Pagar',
+    chaves: [ChavePermissao.CONTAS_PAGAR_VIEW, ChavePermissao.CONTAS_PAGAR_EDIT],
+  },
+  {
+    label: 'Contas a Receber',
+    chaves: [ChavePermissao.CONTAS_RECEBER_VIEW, ChavePermissao.CONTAS_RECEBER_EDIT],
+  },
+];
+
+@Entity('usuario_permissao')
+@Unique(['usuarioId', 'chave'])
+export class UsuarioPermissao {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ name: 'usuario_id', type: 'uuid' })
+  usuarioId: string;
+
+  @ManyToOne(() => Usuario, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'usuario_id' })
+  usuario: Usuario;
+
+  @Column({ length: 100 })
+  chave: string;
+
+  @Column({ default: false })
+  habilitado: boolean;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+}

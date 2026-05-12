@@ -71,6 +71,23 @@ export interface EnderecoCep {
   estado: string;
 }
 
+// ── Permissões ────────────────────────────────────────
+export interface PermissaoItem {
+  chave: string;
+  descricao: string;
+  habilitado: boolean;
+}
+
+export interface UsuarioComPermissoes {
+  usuarioId: string;
+  nome: string;
+  email: string;
+  empresa: string | null;
+  role: string;
+  ativo: boolean;
+  permissoes: PermissaoItem[];
+}
+
 // ── Conta Bancária ────────────────────────────────────
 export interface ContaBancaria {
   id: string;
