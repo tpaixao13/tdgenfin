@@ -2,14 +2,19 @@ import { useState } from 'react';
 import { Receipt, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useContasPagar } from '../hooks/useContasPagar';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissoesCtx } from '../contexts/PermissoesContext';
 import ContasPagarTable from '../components/ContasPagarTable';
 import ContaPagarForm from '../components/ContaPagarForm';
+import AcessoNegado from '../components/AcessoNegado';
 import type { ContaPagar } from '../types';
 
 const LIMIT = 50;
 
 export default function ContasPagar() {
   const { user } = useAuth();
+  const { temPermissao, isLoading: permLoading } = usePermissoesCtx();
+
+  if (!permLoading && !temPermissao('CONTAS_PAGAR_VIEW')) return <AcessoNegado />;
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<ContaPagar | undefined>();

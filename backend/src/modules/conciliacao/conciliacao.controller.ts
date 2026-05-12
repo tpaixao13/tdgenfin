@@ -13,9 +13,12 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { PermissaoGuard } from '../../common/guards/permissao.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequerPermissao } from '../../common/decorators/requer-permissao.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Role } from '../usuarios/usuario.entity';
+import { ChavePermissao } from '../usuarios/usuario-permissao.entity';
 import { ConciliacaoService } from './conciliacao.service';
 import { ConciliacaoManualDto } from './dto/conciliacao-manual.dto';
 
@@ -26,6 +29,8 @@ export class ConciliacaoController {
 
   @Post('automatica/:contaId')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN_EMPRESA)
+  @RequerPermissao(ChavePermissao.CONCILIACAO_EXECUTAR)
+  @UseGuards(PermissaoGuard)
   executarAutomatica(
     @Param('contaId', ParseUUIDPipe) contaId: string,
     @CurrentUser() user: { id: string; role: Role; empresaId: string },
@@ -35,6 +40,8 @@ export class ConciliacaoController {
 
   @Post('manual/:contaId')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN_EMPRESA)
+  @RequerPermissao(ChavePermissao.CONCILIACAO_EXECUTAR)
+  @UseGuards(PermissaoGuard)
   executarManual(
     @Param('contaId', ParseUUIDPipe) contaId: string,
     @Body() dto: ConciliacaoManualDto,

@@ -3,10 +3,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { extratosApi } from '../api/extratos';
 import { contasApi } from '../api/contas';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissoesCtx } from '../contexts/PermissoesContext';
+import AcessoNegado from '../components/AcessoNegado';
 import { Upload, FileText, CheckCircle, AlertCircle, X } from 'lucide-react';
 
 export default function ImportarExtrato() {
   const { isAuthenticated } = useAuth();
+  const { temPermissao, isLoading: permLoading } = usePermissoesCtx();
+
+  if (!permLoading && !temPermissao('EXTRATO_IMPORT')) return <AcessoNegado />;
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 

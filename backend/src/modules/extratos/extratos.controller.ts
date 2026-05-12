@@ -16,9 +16,12 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { PermissaoGuard } from '../../common/guards/permissao.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequerPermissao } from '../../common/decorators/requer-permissao.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Role } from '../usuarios/usuario.entity';
+import { ChavePermissao } from '../usuarios/usuario-permissao.entity';
 import { ExtratosService } from './extratos.service';
 
 @Controller('extratos')
@@ -28,6 +31,8 @@ export class ExtratosController {
 
   @Post('importar/:contaId')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN_EMPRESA)
+  @RequerPermissao(ChavePermissao.EXTRATO_IMPORT)
+  @UseGuards(PermissaoGuard)
   @UseInterceptors(
     FileInterceptor('arquivo', {
       storage: memoryStorage(),

@@ -3,9 +3,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ContaPagar } from './conta-pagar.entity';
 import { ContasPagarService } from './contas-pagar.service';
 import { ContasPagarController } from './contas-pagar.controller';
+import { PermissoesGuardModule } from '../../common/guards/permissoes-guard.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ContaPagar])],
+  imports: [TypeOrmModule.forFeature([ContaPagar]), PermissoesGuardModule],
   providers: [ContasPagarService],
   controllers: [ContasPagarController],
   exports: [ContasPagarService],

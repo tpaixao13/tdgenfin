@@ -120,6 +120,18 @@ export class UsuariosService {
     });
   }
 
+  async listarMinhasPermissoes(usuarioId: string): Promise<Record<string, boolean>> {
+    const registros = await this.permissaoRepo.find({ where: { usuarioId } });
+    const mapa: Record<string, boolean> = {};
+    for (const chave of Object.values(ChavePermissao)) {
+      mapa[chave] = false;
+    }
+    for (const r of registros) {
+      mapa[r.chave] = r.habilitado;
+    }
+    return mapa;
+  }
+
   async atualizarPermissao(
     usuarioId: string,
     dto: UpdatePermissaoDto,
@@ -127,6 +139,12 @@ export class UsuariosService {
   ): Promise<void> {
     const usuario = await this.usuarioRepo.findOne({ where: { id: usuarioId } });
     if (!usuario) throw new NotFoundException('Usuário não encontrado');
+
+    // Captura valor anterior para auditoria completa
+    const anterior = await this.permissaoRepo.findOne({
+      where: { usuarioId, chave: dto.permissao },
+    });
+    const habilitadoAntes = anterior?.habilitado ?? false;
 
     await this.permissaoRepo.upsert(
       { usuarioId, chave: dto.permissao, habilitado: dto.habilitado },
@@ -138,6 +156,7 @@ export class UsuariosService {
       acao: AcaoAuditoria.ALTERACAO_PERMISSAO,
       entidade: 'usuario_permissao',
       entidadeId: usuarioId,
+      dadosAntes: { permissao: dto.permissao, habilitado: habilitadoAntes },
       dadosDepois: { permissao: dto.permissao, habilitado: dto.habilitado },
     });
   }

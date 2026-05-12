@@ -19,6 +19,7 @@ import { UsuariosService } from './usuarios.service';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { UpdatePermissaoDto } from './dto/update-permissao.dto';
+import { ChavePermissao } from './usuario-permissao.entity';
 
 @Controller('usuarios')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -48,6 +49,16 @@ export class UsuariosController {
   ) {
     const empresaId = user.role === Role.SUPER_ADMIN ? undefined : user.empresaId;
     return this.usuariosService.buscarPorId(id, empresaId);
+  }
+
+  @Get('minhas-permissoes')
+  minhasPermissoes(@CurrentUser() user: { id: string; role: Role }) {
+    if (user.role === Role.SUPER_ADMIN) {
+      const tudo: Record<string, boolean> = {};
+      for (const chave of Object.values(ChavePermissao)) tudo[chave] = true;
+      return tudo;
+    }
+    return this.usuariosService.listarMinhasPermissoes(user.id);
   }
 
   @Get('permissoes')
