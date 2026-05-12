@@ -10,6 +10,8 @@ import { ExtratosModule } from './modules/extratos/extratos.module';
 import { ConciliacaoModule } from './modules/conciliacao/conciliacao.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { AuditoriaModule } from './modules/auditoria/auditoria.module';
+import { ContasPagarModule } from './modules/contas-pagar/contas-pagar.module';
+import { ContasReceberModule } from './modules/contas-receber/contas-receber.module';
 
 @Module({
   imports: [
@@ -45,6 +47,8 @@ import { AuditoriaModule } from './modules/auditoria/auditoria.module';
     ConciliacaoModule,
     DashboardModule,
     AuditoriaModule,
+    ContasPagarModule,
+    ContasReceberModule,
   ],
 })
 export class AppModule {}
