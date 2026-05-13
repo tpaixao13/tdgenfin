@@ -1,5 +1,4 @@
-import { IsBoolean, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class UpdateContaBancariaDto {
   @IsOptional()
@@ -21,8 +20,4 @@ export class UpdateContaBancariaDto {
   @IsString()
   @MaxLength(200)
   descricao?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  ativo?: boolean;
 }

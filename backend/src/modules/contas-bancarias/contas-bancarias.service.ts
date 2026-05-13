@@ -8,6 +8,8 @@ import { AuditoriaService } from '../auditoria/auditoria.service';
 import { AcaoAuditoria } from '../auditoria/auditoria-log.entity';
 import { Role } from '../usuarios/usuario.entity';
 
+export type ContaBancariaComMov = ContaBancaria & { temMovimentacoes: boolean };
+
 @Injectable()
 export class ContasBancariasService {
   constructor(
@@ -24,6 +26,14 @@ export class ContasBancariasService {
     if (existente && existente.id !== ignorarId) {
       throw new ConflictException('Já existe uma conta com este banco, agência e número para esta empresa');
     }
+  }
+
+  private async temMovimentacoes(contaId: string): Promise<boolean> {
+    const result = await this.dataSource.query(
+      `SELECT COUNT(*) as count FROM extrato_lancamento WHERE conta_id = $1`,
+      [contaId],
+    );
+    return parseInt(result[0].count) > 0;
   }
 
   async criar(dto: CreateContaBancariaDto, usuarioId: string, usuarioRole: Role, usuarioEmpresaId: string): Promise<ContaBancaria> {
@@ -51,6 +61,32 @@ export class ContasBancariasService {
     return salva;
   }
 
+  async listar(empresaId?: string): Promise<ContaBancariaComMov[]> {
+    const where = empresaId ? { empresaId } : {};
+    const contas = await this.contaRepo.find({ where, order: { banco: 'ASC' } });
+
+    if (contas.length === 0) return [];
+
+    const ids = contas.map(c => c.id);
+    const comMov: { conta_id: string }[] = await this.dataSource.query(
+      `SELECT DISTINCT conta_id FROM extrato_lancamento WHERE conta_id = ANY($1)`,
+      [ids],
+    );
+    const idsComMov = new Set(comMov.map(r => r.conta_id));
+
+    return contas.map(c => Object.assign(c, { temMovimentacoes: idsComMov.has(c.id) }));
+  }
+
+  async buscarPorId(id: string, empresaId?: string): Promise<ContaBancariaComMov> {
+    const conta = await this.contaRepo.findOne({ where: { id } });
+    if (!conta) throw new NotFoundException('Conta bancária não encontrada');
+    if (empresaId && conta.empresaId !== empresaId) {
+      throw new NotFoundException('Conta bancária não encontrada');
+    }
+    const mov = await this.temMovimentacoes(id);
+    return Object.assign(conta, { temMovimentacoes: mov });
+  }
+
   async atualizar(id: string, dto: UpdateContaBancariaDto, usuarioId: string, empresaId?: string): Promise<ContaBancaria> {
     const conta = await this.contaRepo.findOne({ where: { id } });
     if (!conta) throw new NotFoundException('Conta bancária não encontrada');
@@ -58,7 +94,12 @@ export class ContasBancariasService {
       throw new NotFoundException('Conta bancária não encontrada');
     }
 
-    if (dto.banco || dto.agencia || dto.numero) {
+    const mov = await this.temMovimentacoes(id);
+    if (mov && (dto.banco !== undefined || dto.agencia !== undefined || dto.numero !== undefined)) {
+      throw new ConflictException('Conta com movimentações financeiras não permite alteração de banco, agência ou número');
+    }
+
+    if (!mov && (dto.banco || dto.agencia || dto.numero)) {
       await this.verificarDuplicata(
         conta.empresaId,
         dto.banco ?? conta.banco,
@@ -68,7 +109,7 @@ export class ContasBancariasService {
       );
     }
 
-    const dadosAntes = { banco: conta.banco, agencia: conta.agencia, numero: conta.numero, descricao: conta.descricao, ativo: conta.ativo };
+    const dadosAntes = { banco: conta.banco, agencia: conta.agencia, numero: conta.numero, descricao: conta.descricao };
     Object.assign(conta, dto);
     const salva = await this.contaRepo.save(conta);
 
@@ -79,30 +120,56 @@ export class ContasBancariasService {
       entidade: 'conta_bancaria',
       entidadeId: salva.id,
       dadosAntes,
-      dadosDepois: { banco: salva.banco, agencia: salva.agencia, numero: salva.numero, descricao: salva.descricao, ativo: salva.ativo },
+      dadosDepois: { banco: salva.banco, agencia: salva.agencia, numero: salva.numero, descricao: salva.descricao },
     });
 
     return salva;
   }
 
-  async listar(empresaId?: string): Promise<ContaBancaria[]> {
-    const where = empresaId ? { empresaId } : {};
-    return this.contaRepo.find({ where, order: { banco: 'ASC' } });
-  }
-
-  async buscarPorId(id: string, empresaId?: string): Promise<ContaBancaria> {
+  async inativar(id: string, usuarioId: string, empresaId?: string): Promise<ContaBancaria> {
     const conta = await this.contaRepo.findOne({ where: { id } });
     if (!conta) throw new NotFoundException('Conta bancária não encontrada');
     if (empresaId && conta.empresaId !== empresaId) {
       throw new NotFoundException('Conta bancária não encontrada');
     }
-    return conta;
+
+    await this.contaRepo.update(id, { ativo: false });
+
+    await this.auditoriaService.registrar({
+      usuarioId,
+      empresaId: conta.empresaId,
+      acao: AcaoAuditoria.INATIVACAO_CONTA,
+      entidade: 'conta_bancaria',
+      entidadeId: id,
+      dadosAntes: { ativo: true },
+      dadosDepois: { ativo: false },
+    });
+
+    return { ...conta, ativo: false };
   }
 
-  /**
-   * Recalcula saldo da conta baseado em todos os lançamentos de extrato.
-   * Garante consistência ACID via transação.
-   */
+  async ativar(id: string, usuarioId: string, empresaId?: string): Promise<ContaBancaria> {
+    const conta = await this.contaRepo.findOne({ where: { id } });
+    if (!conta) throw new NotFoundException('Conta bancária não encontrada');
+    if (empresaId && conta.empresaId !== empresaId) {
+      throw new NotFoundException('Conta bancária não encontrada');
+    }
+
+    await this.contaRepo.update(id, { ativo: true });
+
+    await this.auditoriaService.registrar({
+      usuarioId,
+      empresaId: conta.empresaId,
+      acao: AcaoAuditoria.ATIVACAO_CONTA,
+      entidade: 'conta_bancaria',
+      entidadeId: id,
+      dadosAntes: { ativo: false },
+      dadosDepois: { ativo: true },
+    });
+
+    return { ...conta, ativo: true };
+  }
+
   async recalcularSaldo(contaId: string): Promise<{ saldoCalculado: number; diferenca: number }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();

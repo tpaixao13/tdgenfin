@@ -99,6 +99,7 @@ export interface ContaBancaria {
   saldoInicial: number;
   saldoAtual: number;
   ativo: boolean;
+  temMovimentacoes: boolean;
 }
 
 export interface CreateContaBancariaPayload {

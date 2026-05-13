@@ -69,6 +69,30 @@ export class ContasBancariasController {
     return this.contasService.atualizar(id, dto, user.id, empresaId);
   }
 
+  @Patch(':id/inativar')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN_EMPRESA)
+  @RequerPermissao(ChavePermissao.CONTA_BANCARIA_EDIT)
+  @UseGuards(PermissaoGuard)
+  inativar(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: { id: string; role: Role; empresaId: string },
+  ) {
+    const empresaId = user.role === Role.SUPER_ADMIN ? undefined : user.empresaId;
+    return this.contasService.inativar(id, user.id, empresaId);
+  }
+
+  @Patch(':id/ativar')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN_EMPRESA)
+  @RequerPermissao(ChavePermissao.CONTA_BANCARIA_EDIT)
+  @UseGuards(PermissaoGuard)
+  ativar(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: { id: string; role: Role; empresaId: string },
+  ) {
+    const empresaId = user.role === Role.SUPER_ADMIN ? undefined : user.empresaId;
+    return this.contasService.ativar(id, user.id, empresaId);
+  }
+
   @Patch(':id/recalcular-saldo')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN_EMPRESA)
   recalcularSaldo(@Param('id', ParseUUIDPipe) id: string) {

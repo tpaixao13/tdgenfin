@@ -13,6 +13,12 @@ export const contasApi = {
   atualizar: (id: string, dto: UpdateContaBancariaPayload) =>
     api.put<ContaBancaria>(`/contas-bancarias/${id}`, dto).then((r) => r.data),
 
+  inativar: (id: string) =>
+    api.patch<ContaBancaria>(`/contas-bancarias/${id}/inativar`).then((r) => r.data),
+
+  ativar: (id: string) =>
+    api.patch<ContaBancaria>(`/contas-bancarias/${id}/ativar`).then((r) => r.data),
+
   recalcularSaldo: (id: string) =>
     api
       .patch<{ saldoCalculado: number; diferenca: number }>(

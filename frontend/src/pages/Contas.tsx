@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { contasApi } from '../api/contas';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissoesCtx } from '../contexts/PermissoesContext';
 import AcessoNegado from '../components/AcessoNegado';
 import ContaBancariaForm from '../components/ContaBancariaForm';
-import { Landmark, RefreshCw, Plus, Pencil } from 'lucide-react';
+import { Landmark, RefreshCw, Plus, Pencil, PowerOff, Power } from 'lucide-react';
 import type { ContaBancaria } from '../types';
 
 function formatCurrency(v: number) {
@@ -15,6 +15,7 @@ function formatCurrency(v: number) {
 export default function Contas() {
   const { isAuthenticated } = useAuth();
   const { temPermissao, isLoading: permLoading } = usePermissoesCtx();
+  const queryClient = useQueryClient();
 
   if (!permLoading && !temPermissao('CONTA_BANCARIA_VIEW')) return <AcessoNegado />;
 
@@ -29,6 +30,18 @@ export default function Contas() {
 
   const canCreate = temPermissao('CONTA_BANCARIA_CREATE');
   const canEdit = temPermissao('CONTA_BANCARIA_EDIT');
+
+  const { mutate: inativar, isPending: inativando } = useMutation({
+    mutationFn: (id: string) => contasApi.inativar(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['contas'] }),
+  });
+
+  const { mutate: ativar, isPending: ativando } = useMutation({
+    mutationFn: (id: string) => contasApi.ativar(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['contas'] }),
+  });
+
+  const alterandoStatus = inativando || ativando;
 
   function handleEdit(conta: ContaBancaria) {
     setEditTarget(conta);
@@ -87,12 +100,16 @@ export default function Contas() {
           {contas.map((conta) => (
             <div
               key={conta.id}
-              className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow"
+              className={`bg-white border rounded-xl p-6 hover:shadow-md transition-shadow ${
+                conta.ativo ? 'border-gray-200' : 'border-amber-200 bg-amber-50/30'
+              }`}
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 bg-slate-100 rounded-lg flex items-center justify-center">
-                    <Landmark size={22} className="text-slate-600" />
+                  <div className={`w-11 h-11 rounded-lg flex items-center justify-center ${
+                    conta.ativo ? 'bg-slate-100' : 'bg-amber-100'
+                  }`}>
+                    <Landmark size={22} className={conta.ativo ? 'text-slate-600' : 'text-amber-600'} />
                   </div>
                   <div>
                     <p className="font-semibold text-gray-800">{conta.banco}</p>
@@ -101,24 +118,44 @@ export default function Contas() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      conta.ativo
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-500'
-                    }`}
-                  >
-                    {conta.ativo ? 'Ativa' : 'Inativa'}
+
+                <div className="flex items-center gap-1.5">
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                    conta.ativo ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                  }`}>
+                    {conta.ativo ? '✓ Ativa' : '⚠ Inativa'}
                   </span>
+
                   {canEdit && (
-                    <button
-                      onClick={() => handleEdit(conta)}
-                      className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Editar conta"
-                    >
-                      <Pencil size={14} />
-                    </button>
+                    <>
+                      <button
+                        onClick={() => handleEdit(conta)}
+                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Editar conta"
+                      >
+                        <Pencil size={14} />
+                      </button>
+
+                      {conta.ativo ? (
+                        <button
+                          onClick={() => inativar(conta.id)}
+                          disabled={alterandoStatus}
+                          className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors disabled:opacity-40"
+                          title="Inativar conta"
+                        >
+                          <PowerOff size={14} />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => ativar(conta.id)}
+                          disabled={alterandoStatus}
+                          className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-40"
+                          title="Ativar conta"
+                        >
+                          <Power size={14} />
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -136,11 +173,7 @@ export default function Contas() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-400 mb-1">Saldo Atual</p>
-                  <p
-                    className={`font-bold text-lg ${
-                      conta.saldoAtual >= 0 ? 'text-green-600' : 'text-red-600'
-                    }`}
-                  >
+                  <p className={`font-bold text-lg ${conta.saldoAtual >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {formatCurrency(conta.saldoAtual)}
                   </p>
                 </div>
@@ -151,10 +184,7 @@ export default function Contas() {
       )}
 
       {showForm && (
-        <ContaBancariaForm
-          editTarget={editTarget}
-          onClose={handleCloseForm}
-        />
+        <ContaBancariaForm editTarget={editTarget} onClose={handleCloseForm} />
       )}
     </div>
   );

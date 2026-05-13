@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, AlertTriangle } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { contasApi } from '../api/contas';
 import { useEmpresa } from '../contexts/EmpresaContext';
@@ -16,23 +16,16 @@ interface FormState {
   numero: string;
   descricao: string;
   saldoInicial: number;
-  ativo: boolean;
 }
 
-const VAZIO: FormState = {
-  banco: '',
-  agencia: '',
-  numero: '',
-  descricao: '',
-  saldoInicial: 0,
-  ativo: true,
-};
+const VAZIO: FormState = { banco: '', agencia: '', numero: '', descricao: '', saldoInicial: 0 };
 
 export default function ContaBancariaForm({ editTarget, onClose }: Props) {
   const { empresaAtiva } = useEmpresa();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<FormState>(VAZIO);
   const isEditing = !!editTarget;
+  const bloqueado = isEditing && !!editTarget?.temMovimentacoes;
 
   useEffect(() => {
     if (editTarget) {
@@ -42,7 +35,6 @@ export default function ContaBancariaForm({ editTarget, onClose }: Props) {
         numero: editTarget.numero,
         descricao: editTarget.descricao ?? '',
         saldoInicial: editTarget.saldoInicial,
-        ativo: editTarget.ativo,
       });
     }
   }, [editTarget]);
@@ -57,25 +49,18 @@ export default function ContaBancariaForm({ editTarget, onClose }: Props) {
         descricao: form.descricao || undefined,
         saldoInicial: form.saldoInicial,
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contas'] });
-      onClose();
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['contas'] }); onClose(); },
   });
 
   const { mutate: atualizar, isPending: atualizando, error: erroAtualizar } = useMutation({
     mutationFn: () =>
       contasApi.atualizar(editTarget!.id, {
-        banco: form.banco,
-        agencia: form.agencia,
-        numero: form.numero,
+        banco: bloqueado ? undefined : form.banco,
+        agencia: bloqueado ? undefined : form.agencia,
+        numero: bloqueado ? undefined : form.numero,
         descricao: form.descricao || undefined,
-        ativo: form.ativo,
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contas'] });
-      onClose();
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['contas'] }); onClose(); },
   });
 
   const isPending = criando || atualizando;
@@ -93,12 +78,13 @@ export default function ContaBancariaForm({ editTarget, onClose }: Props) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (isEditing) {
-      atualizar();
-    } else {
-      criar();
-    }
+    isEditing ? atualizar() : criar();
   }
+
+  const inputCls = (disabled: boolean) =>
+    `w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+      disabled ? 'bg-gray-50 text-gray-400 cursor-not-allowed' : ''
+    }`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -113,6 +99,13 @@ export default function ContaBancariaForm({ editTarget, onClose }: Props) {
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          {bloqueado && (
+            <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-3 text-sm">
+              <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+              <span>Esta conta já possui movimentações financeiras. Banco, agência e número não podem ser alterados.</span>
+            </div>
+          )}
+
           {errorMsg && (
             <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
               {errorMsg}
@@ -125,10 +118,11 @@ export default function ContaBancariaForm({ editTarget, onClose }: Props) {
               type="text"
               value={form.banco}
               onChange={(e) => set('banco', e.target.value)}
-              required
+              required={!bloqueado}
+              disabled={bloqueado}
               maxLength={100}
               placeholder="Ex: Banco do Brasil"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputCls(bloqueado)}
             />
           </div>
 
@@ -139,10 +133,11 @@ export default function ContaBancariaForm({ editTarget, onClose }: Props) {
                 type="text"
                 value={form.agencia}
                 onChange={(e) => set('agencia', e.target.value)}
-                required
+                required={!bloqueado}
+                disabled={bloqueado}
                 maxLength={20}
                 placeholder="0001"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputCls(bloqueado)}
               />
             </div>
             <div>
@@ -151,10 +146,11 @@ export default function ContaBancariaForm({ editTarget, onClose }: Props) {
                 type="text"
                 value={form.numero}
                 onChange={(e) => set('numero', e.target.value)}
-                required
+                required={!bloqueado}
+                disabled={bloqueado}
                 maxLength={30}
                 placeholder="12345-6"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputCls(bloqueado)}
               />
             </div>
           </div>
@@ -167,7 +163,7 @@ export default function ContaBancariaForm({ editTarget, onClose }: Props) {
               onChange={(e) => set('descricao', e.target.value)}
               maxLength={200}
               placeholder="Ex: Conta corrente principal"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputCls(false)}
             />
           </div>
 
@@ -180,21 +176,8 @@ export default function ContaBancariaForm({ editTarget, onClose }: Props) {
                 onChange={(e) => set('saldoInicial', parseFloat(e.target.value) || 0)}
                 step={0.01}
                 placeholder="0,00"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputCls(false)}
               />
-            </div>
-          )}
-
-          {isEditing && (
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="ativo"
-                checked={form.ativo}
-                onChange={(e) => set('ativo', e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <label htmlFor="ativo" className="text-sm font-medium text-gray-700">Conta ativa</label>
             </div>
           )}
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useLogin } from '../hooks/useAuth';
 import { Lock, Mail, AlertCircle } from 'lucide-react';
 
@@ -105,6 +105,12 @@ export default function Login() {
                 {isPending ? 'Entrando...' : 'Entrar'}
               </button>
             </form>
+
+            <div className="mt-4 text-center">
+              <Link to="/esqueci-senha" className="text-sm text-blue-600 hover:underline">
+                Esqueceu a senha?
+              </Link>
+            </div>
 
           </div>
         </div>

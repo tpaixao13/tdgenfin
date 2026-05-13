@@ -16,6 +16,8 @@ import ContasPagar from '../pages/ContasPagar';
 import ContasReceber from '../pages/ContasReceber';
 import Permissoes from '../pages/Permissoes';
 import Relatorios from '../pages/Relatorios';
+import EsqueciSenha from '../pages/EsqueciSenha';
+import ResetSenha from '../pages/ResetSenha';
 
 function PrivateRoute() {
   const { isAuthenticated } = useAuth();
@@ -33,7 +35,11 @@ export default function AppRoutes() {
       <Routes>
         <Route element={<PublicRoute />}>
           <Route path="/login" element={<Login />} />
+          <Route path="/esqueci-senha" element={<EsqueciSenha />} />
         </Route>
+
+        {/* Reset de senha: acessível mesmo logado (token já é a autenticação) */}
+        <Route path="/reset-senha" element={<ResetSenha />} />
 
         <Route element={<PrivateRoute />}>
           <Route element={<Layout />}>
