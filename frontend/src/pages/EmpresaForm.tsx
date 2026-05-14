@@ -32,6 +32,7 @@ interface FormData extends EnderecoFormData {
   email: string;
   site: string;
   ativo: boolean;
+  maxUsuarios: number;
 }
 
 const VAZIO: FormData = {
@@ -41,6 +42,7 @@ const VAZIO: FormData = {
   bairro: '', cidade: '', estado: '', pais: 'Brasil',
   telefone: '', email: '', site: '',
   ativo: true,
+  maxUsuarios: 5,
 };
 
 const inputCls =
@@ -81,6 +83,7 @@ export default function EmpresaFormPage() {
         email: empresa.email ?? '',
         site: empresa.site ?? '',
         ativo: empresa.ativo,
+        maxUsuarios: empresa.maxUsuarios ?? 5,
       });
     }
   }, [empresa]);
@@ -110,7 +113,7 @@ export default function EmpresaFormPage() {
     }
   }
 
-  function buildPayload(): CreateEmpresaPayload {
+  function buildPayload(): CreateEmpresaPayload & { maxUsuarios: number } {
     return {
       nome: form.nome,
       nomeFantasia: form.nomeFantasia || undefined,
@@ -128,6 +131,7 @@ export default function EmpresaFormPage() {
       telefone: form.telefone || undefined,
       email: form.email || undefined,
       site: form.site || undefined,
+      maxUsuarios: form.maxUsuarios,
     };
   }
 
@@ -293,6 +297,27 @@ export default function EmpresaFormPage() {
                 className={inputCls}
               />
             </div>
+          </div>
+        </section>
+
+        {/* ── Licença ── */}
+        <section className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+          <h3 className="text-sm font-semibold text-gray-700 pb-2 border-b border-gray-100">
+            Licença
+          </h3>
+          <div className="max-w-xs">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Limite de usuários ativos <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              min={1}
+              value={form.maxUsuarios}
+              onChange={(e) => setForm((f) => ({ ...f, maxUsuarios: Math.max(1, parseInt(e.target.value) || 1) }))}
+              required
+              className={inputCls}
+            />
+            <p className="text-xs text-gray-400 mt-1">Número máximo de usuários ativos permitidos para esta empresa.</p>
           </div>
         </section>
 

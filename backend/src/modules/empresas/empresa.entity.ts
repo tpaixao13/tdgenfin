@@ -21,6 +21,9 @@ export class Empresa {
   @Column({ default: true })
   ativo: boolean;
 
+  @Column({ name: 'max_usuarios', default: 5 })
+  maxUsuarios: number;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

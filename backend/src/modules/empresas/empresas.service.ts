@@ -59,7 +59,7 @@ export class EmpresasService {
 
   async atualizar(id: string, dto: UpdateEmpresaDto, usuarioId: string): Promise<Empresa> {
     const empresa = await this.buscarPorId(id);
-    const dadosAntes = { nome: empresa.nome, cnpj: empresa.cnpj, ativo: empresa.ativo };
+    const dadosAntes = { nome: empresa.nome, cnpj: empresa.cnpj, ativo: empresa.ativo, maxUsuarios: empresa.maxUsuarios };
 
     Object.assign(empresa, dto);
     const atualizada = await this.empresaRepo.save(empresa);
@@ -71,8 +71,20 @@ export class EmpresasService {
       entidade: 'empresa',
       entidadeId: id,
       dadosAntes,
-      dadosDepois: { nome: atualizada.nome, cnpj: atualizada.cnpj, ativo: atualizada.ativo },
+      dadosDepois: { nome: atualizada.nome, cnpj: atualizada.cnpj, ativo: atualizada.ativo, maxUsuarios: atualizada.maxUsuarios },
     });
+
+    if (dto.maxUsuarios !== undefined && dto.maxUsuarios !== dadosAntes.maxUsuarios) {
+      this.auditoriaService.registrar({
+        usuarioId,
+        empresaId: id,
+        acao: AcaoAuditoria.ALTERACAO_LICENCA,
+        entidade: 'empresa',
+        entidadeId: id,
+        dadosAntes: { maxUsuarios: dadosAntes.maxUsuarios },
+        dadosDepois: { maxUsuarios: atualizada.maxUsuarios },
+      }).catch(err => console.error('Audit ALTERACAO_LICENCA error:', err));
+    }
 
     return atualizada;
   }

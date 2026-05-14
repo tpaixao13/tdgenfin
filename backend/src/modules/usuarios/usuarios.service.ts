@@ -13,6 +13,7 @@ import {
   ChavePermissao,
   PERMISSOES_DESCRICOES,
 } from './usuario-permissao.entity';
+import { Empresa } from '../empresas/empresa.entity';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { UpdatePermissaoDto } from './dto/update-permissao.dto';
@@ -26,6 +27,8 @@ export class UsuariosService {
     private readonly usuarioRepo: Repository<Usuario>,
     @InjectRepository(UsuarioPermissao)
     private readonly permissaoRepo: Repository<UsuarioPermissao>,
+    @InjectRepository(Empresa)
+    private readonly empresaRepo: Repository<Empresa>,
     private readonly auditoriaService: AuditoriaService,
   ) {}
 
@@ -36,6 +39,21 @@ export class UsuariosService {
         throw new ForbiddenException('Não é possível criar usuários para outra empresa');
       }
       dto.empresaId = criadorEmpresaId;
+
+      const empresa = await this.empresaRepo.findOne({ where: { id: criadorEmpresaId } });
+      if (empresa) {
+        const ativos = await this.usuarioRepo.count({ where: { empresaId: criadorEmpresaId, ativo: true } });
+        if (ativos >= empresa.maxUsuarios) {
+          this.auditoriaService.registrar({
+            usuarioId: criadorId,
+            empresaId: criadorEmpresaId,
+            acao: AcaoAuditoria.TENTATIVA_LIMITE_USUARIOS,
+            entidade: 'usuario',
+            dadosAntes: { usuariosAtivos: ativos, maxUsuarios: empresa.maxUsuarios },
+          }).catch(err => console.error('Audit TENTATIVA_LIMITE_USUARIOS error:', err));
+          throw new ForbiddenException(`Limite de ${empresa.maxUsuarios} usuário(s) ativo(s) atingido para esta empresa`);
+        }
+      }
     }
 
     const existe = await this.usuarioRepo.findOne({ where: { email: dto.email } });

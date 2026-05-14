@@ -38,6 +38,7 @@ export interface Empresa {
   site?: string;
   // Status
   ativo: boolean;
+  maxUsuarios: number;
   createdAt: string;
 }
 
@@ -62,6 +63,7 @@ export interface CreateEmpresaPayload {
 
 export interface UpdateEmpresaPayload extends Partial<CreateEmpresaPayload> {
   ativo?: boolean;
+  maxUsuarios?: number;
 }
 
 export interface EnderecoCep {
@@ -215,7 +217,9 @@ export type AcaoAuditoria =
   | 'ATUALIZACAO_EMPRESA'
   | 'CRIACAO_USUARIO'
   | 'LOGIN'
-  | 'ESTORNO_CONCILIACAO';
+  | 'ESTORNO_CONCILIACAO'
+  | 'ALTERACAO_LICENCA'
+  | 'TENTATIVA_LIMITE_USUARIOS';
 
 export interface AuditoriaLog {
   id: string;
