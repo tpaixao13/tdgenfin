@@ -5,8 +5,9 @@ const GRUPOS: { label: string; chaves: string[] }[] = [
   { label: 'Visualização', chaves: ['DASHBOARD_VIEW', 'AUDITORIA_VIEW'] },
   { label: 'Extratos', chaves: ['EXTRATO_IMPORT'] },
   { label: 'Conciliação', chaves: ['CONCILIACAO_EXECUTAR'] },
-  { label: 'Contas a Pagar', chaves: ['CONTAS_PAGAR_VIEW', 'CONTAS_PAGAR_EDIT'] },
-  { label: 'Contas a Receber', chaves: ['CONTAS_RECEBER_VIEW', 'CONTAS_RECEBER_EDIT'] },
+  { label: 'Contas Bancárias', chaves: ['CONTA_BANCARIA_VIEW', 'CONTA_BANCARIA_CREATE', 'CONTA_BANCARIA_EDIT'] },
+  { label: 'Contas a Pagar', chaves: ['CONTAS_PAGAR_VIEW', 'CONTAS_PAGAR_CREATE', 'CONTAS_PAGAR_EDIT'] },
+  { label: 'Contas a Receber', chaves: ['CONTAS_RECEBER_VIEW', 'CONTAS_RECEBER_CREATE', 'CONTAS_RECEBER_EDIT'] },
 ];
 
 interface Props {
