@@ -120,11 +120,12 @@ export class UsuariosService {
     }
 
     return usuarios.map((u) => {
+      const isSuperAdmin = u.role === Role.SUPER_ADMIN;
       const mapa = permissoesPorUsuario.get(u.id) ?? new Map<string, boolean>();
       const permissoes = Object.values(ChavePermissao).map((chave) => ({
         chave,
         descricao: PERMISSOES_DESCRICOES[chave],
-        habilitado: mapa.get(chave) ?? false,
+        habilitado: isSuperAdmin ? true : (mapa.get(chave) ?? false),
       }));
       return {
         usuarioId: u.id,
