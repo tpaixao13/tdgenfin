@@ -776,7 +776,7 @@ Formulário completo de cadastro ou edição de empresa.
 
 | Campo | Obrigatório | Descrição |
 |---|---|---|
-| Limite de usuários ativos | Sim | Número máximo de usuários ativos que a empresa pode ter. Padrão: 5. Mínimo: 1. Somente SUPER_ADMIN pode alterar este valor. |
+| Limite de usuários ativos | Sim | Número máximo de usuários ativos que a empresa pode ter. Padrão: 1. Mínimo: 1. Somente SUPER_ADMIN pode alterar este valor. |
 
 ### Seção — Status (somente na edição)
 
@@ -791,7 +791,7 @@ Formulário completo de cadastro ou edição de empresa.
 | **Cancelar** | Retorna para a listagem de empresas sem salvar alterações. |
 | **Criar Empresa / Salvar Alterações** | Valida e salva os dados. Fica desabilitado durante o processamento. |
 
-> Ao criar uma empresa, o limite de usuários padrão é **5**. Pode ser ajustado a qualquer momento pelo SUPER_ADMIN no formulário de edição.
+> Ao criar uma empresa, o limite de usuários padrão é **1**. Pode ser ajustado a qualquer momento pelo SUPER_ADMIN no formulário de edição.
 
 ---
 

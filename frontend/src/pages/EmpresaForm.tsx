@@ -42,7 +42,7 @@ const VAZIO: FormData = {
   bairro: '', cidade: '', estado: '',
   telefone: '', email: '', site: '',
   ativo: true,
-  maxUsuarios: 5,
+  maxUsuarios: 1,
 };
 
 const inputCls =
@@ -82,7 +82,7 @@ export default function EmpresaFormPage() {
         email: empresa.email ?? '',
         site: empresa.site ?? '',
         ativo: empresa.ativo,
-        maxUsuarios: empresa.maxUsuarios ?? 5,
+        maxUsuarios: empresa.maxUsuarios ?? 1,
       });
     }
   }, [empresa]);
