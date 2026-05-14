@@ -93,7 +93,7 @@ export default function EmpresaView() {
         {endereco || localidade ? (
           <div className="grid grid-cols-2 gap-4">
             <Campo label="CEP" valor={emp.cep} />
-            <Campo label="País" valor={emp.pais} />
+
             <div className="col-span-2">
               <Campo label="Logradouro" valor={endereco || emp.logradouro} />
             </div>

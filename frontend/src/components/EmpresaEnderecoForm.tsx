@@ -8,7 +8,6 @@ export interface EnderecoFormData {
   bairro: string;
   cidade: string;
   estado: string;
-  pais: string;
 }
 
 interface Props {
@@ -125,17 +124,6 @@ export default function EmpresaEnderecoForm({ form, onChange, onCepBlur, buscand
         </div>
       </div>
 
-      {/* País */}
-      <div className="w-48">
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">País</label>
-        <input
-          type="text"
-          value={form.pais}
-          onChange={(e) => onChange('pais', e.target.value)}
-          placeholder="Brasil"
-          className={inputCls}
-        />
-      </div>
     </fieldset>
   );
 }

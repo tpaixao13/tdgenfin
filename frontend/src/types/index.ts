@@ -31,7 +31,6 @@ export interface Empresa {
   bairro?: string;
   cidade?: string;
   estado?: string;
-  pais?: string;
   // Contato
   telefone?: string;
   email?: string;
@@ -55,7 +54,6 @@ export interface CreateEmpresaPayload {
   bairro?: string;
   cidade?: string;
   estado?: string;
-  pais?: string;
   telefone?: string;
   email?: string;
   site?: string;
