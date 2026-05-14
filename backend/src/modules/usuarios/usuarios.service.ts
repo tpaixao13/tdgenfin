@@ -63,6 +63,13 @@ export class UsuariosService {
     const usuario = this.usuarioRepo.create({ ...dto, senhaHash });
     const salvo = await this.usuarioRepo.save(usuario);
 
+    if (salvo.role === Role.ADMIN_EMPRESA) {
+      const permissoesPadrao = [ChavePermissao.DASHBOARD_VIEW, ChavePermissao.CONTA_BANCARIA_VIEW];
+      await this.permissaoRepo.save(
+        permissoesPadrao.map((chave) => this.permissaoRepo.create({ usuarioId: salvo.id, chave, habilitado: true })),
+      );
+    }
+
     await this.auditoriaService.registrar({
       usuarioId: criadorId,
       empresaId: salvo.empresaId ?? undefined,
