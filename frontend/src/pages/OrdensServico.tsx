@@ -34,7 +34,7 @@ const fmtData = (d: string | null) =>
 export default function OrdensServico() {
   const { temPermissao } = usePermissoesCtx();
 
-  const { data, isLoading, isError } = useOrdensServico();
+  const { data, isLoading, isError, error } = useOrdensServico();
   const { mutate: criar, isPending: criando } = useCriarOrdemServico();
   const { mutate: atualizar, isPending: atualizando } = useAtualizarOrdemServico();
   const { mutate: finalizar, isPending: finalizando } = useFinalizarOrdemServico();
@@ -116,7 +116,11 @@ export default function OrdensServico() {
           <div className="text-center py-16 text-gray-400 text-sm">Carregando ordens de serviço...</div>
         )}
         {isError && (
-          <div className="text-center py-16 text-red-500 text-sm">Erro ao carregar. Tente novamente.</div>
+          <div className="text-center py-16 text-sm text-gray-500">
+            {(error as any)?.response?.status === 400
+              ? 'Selecione uma empresa no menu superior para visualizar as ordens de serviço.'
+              : 'Erro ao carregar. Tente novamente.'}
+          </div>
         )}
         {!isLoading && !isError && ordens.length === 0 && (
           <div className="text-center py-16 text-gray-400 text-sm">Nenhuma ordem de serviço cadastrada.</div>
