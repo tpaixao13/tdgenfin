@@ -58,6 +58,7 @@ export interface CreateEmpresaPayload {
   telefone?: string;
   email?: string;
   site?: string;
+  logoUrl?: string;
 }
 
 export interface UpdateEmpresaPayload extends Partial<CreateEmpresaPayload> {
