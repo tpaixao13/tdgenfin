@@ -73,6 +73,8 @@ export default function OrdemServicoView() {
             border: none !important;
             border-radius: 0 !important;
             box-shadow: none !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
         }
       `}</style>
