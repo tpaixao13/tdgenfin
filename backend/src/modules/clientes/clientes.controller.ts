@@ -41,8 +41,6 @@ export class ClientesController {
   }
 
   @Post()
-  @UseGuards(PermissaoGuard)
-  @RequerPermissao(ChavePermissao.CLIENTE_CREATE)
   criar(
     @Body() dto: CreateClienteDto,
     @CurrentUser() user: { role: Role; empresaId: string },

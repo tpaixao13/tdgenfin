@@ -31,13 +31,14 @@ function maskTel(v: string) {
   return d.replace(/^(\d{2})(\d{5})(\d)/, '($1) $2-$3');
 }
 
-const novoVazio = { nome: '', cpfCnpj: '', email: '', telefone: '' };
+const novoVazio = { nome: '', cpfCnpj: '', email: '', telefone: '', erro: '' };
 
 export default function ClienteAutocomplete({ value, onChange }: Props) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [showCriar, setShowCriar] = useState(false);
   const [novo, setNovo] = useState(novoVazio);
+  const setErro = (erro: string) => setNovo((n) => ({ ...n, erro }));
   const ref = useRef<HTMLDivElement>(null);
 
   const { data: resultados = [], isFetching } = useBuscarClientes(query);
@@ -63,13 +64,14 @@ export default function ClienteAutocomplete({ value, onChange }: Props) {
   }
 
   function abrirCriar() {
-    setNovo({ ...novoVazio, nome: query });
+    setNovo({ ...novoVazio, nome: query, erro: '' });
     setShowCriar(true);
     setOpen(false);
   }
 
   function handleCriar(e: React.FormEvent) {
     e.preventDefault();
+    setErro('');
     criar(
       {
         nome: novo.nome,
@@ -82,6 +84,13 @@ export default function ClienteAutocomplete({ value, onChange }: Props) {
           selecionar(criado);
           setShowCriar(false);
           setNovo(novoVazio);
+        },
+        onError: (err: unknown) => {
+          const data = (err as any)?.response?.data;
+          const msg = Array.isArray(data?.message)
+            ? data.message.join(', ')
+            : data?.message ?? 'Erro ao salvar cliente. Tente novamente.';
+          setErro(msg);
         },
       },
     );
@@ -206,6 +215,12 @@ export default function ClienteAutocomplete({ value, onChange }: Props) {
                   className={fieldCls}
                 />
               </div>
+
+              {novo.erro && (
+                <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  {novo.erro}
+                </p>
+              )}
 
               <div className="flex gap-2 pt-1">
                 <button
