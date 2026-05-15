@@ -21,7 +21,7 @@ const fmtData = (d: string | null) =>
 
 interface Props {
   os: OrdemServico;
-  empresa: Pick<Empresa, 'nome' | 'cnpj' | 'logoUrl'>;
+  empresa: Pick<Empresa, 'nome' | 'logoUrl'>;
 }
 
 export default function OrdemServicoDocumento({ os, empresa }: Props) {
@@ -29,41 +29,26 @@ export default function OrdemServicoDocumento({ os, empresa }: Props) {
     <div className="os-documento bg-white rounded-xl border border-gray-200 overflow-hidden print:border-0 print:rounded-none print:shadow-none">
       {/* Cabeçalho */}
       <div className="flex items-center justify-between px-8 py-6 print:px-6 print:py-4" style={{ backgroundColor: '#0B2A4A' }}>
-        <div>
-          {empresa.logoUrl ? (
-            <img
-              src={empresa.logoUrl}
-              alt="Logo"
-              className="h-16 max-w-[180px] object-contain bg-white rounded p-1"
-            />
-          ) : (
-            <div className="text-white font-bold text-xl">{empresa.nome}</div>
-          )}
+        <div className="flex items-center gap-4">
+          <img
+            src="/logo.png"
+            alt="CoreFinance"
+            className="h-14 w-auto object-contain brightness-0 invert"
+          />
+          <div>
+            <div className="text-white font-bold text-lg leading-tight">CoreFinance</div>
+            <div className="text-xs text-white/60 tracking-wide">Sistema de Gestão Financeira</div>
+          </div>
         </div>
         <div className="text-right text-white">
-          <div className="text-xs tracking-widest opacity-70 uppercase mb-1">Ordem de Serviço</div>
+          <div className="text-xs tracking-widest opacity-60 uppercase mb-1">Ordem de Serviço</div>
           <div className="text-2xl font-bold font-mono">Nº {String(os.numero).padStart(6, '0')}</div>
+          <div className="text-xs opacity-60 mt-0.5">{empresa.nome}</div>
         </div>
       </div>
 
       {/* Corpo */}
       <div className="px-8 py-6 space-y-6 print:px-6 print:py-4 print:space-y-4">
-        {/* Empresa */}
-        <section>
-          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3 border-b border-gray-100 pb-1">
-            Empresa Prestadora
-          </p>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs text-gray-400">Razão Social</p>
-              <p className="text-sm font-semibold text-gray-800">{empresa.nome}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-400">CNPJ</p>
-              <p className="text-sm font-semibold text-gray-800">{empresa.cnpj}</p>
-            </div>
-          </div>
-        </section>
 
         {/* Cliente */}
         <section>
