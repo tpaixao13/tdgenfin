@@ -317,6 +317,7 @@ export default function Dashboard() {
                     valor={resumo.saldoAtual}
                     icone={<Wallet size={16} />}
                     variante={resumo.saldoAtual >= 0 ? 'blue' : 'red'}
+                    onClick={() => navigate('/contas')}
                     badge={
                       resumo.totalPendentes > 0
                         ? { texto: `${resumo.totalPendentes} pendentes`, cor: 'bg-yellow-100 text-yellow-700' }
