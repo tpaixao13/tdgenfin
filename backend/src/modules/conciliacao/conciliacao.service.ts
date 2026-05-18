@@ -19,6 +19,31 @@ export interface ResultadoConciliacao {
   naoEncontrados: number;
 }
 
+export interface MatchProposto {
+  lancamentoId: string;
+  lancamentoData: string;
+  lancamentoDescricao: string | null;
+  lancamentoValor: number;
+  lancamentoTipo: string;
+  tipo: 'PAGAR' | 'RECEBER';
+  contaErpId: string;
+  contaErpDescricao: string;
+  contaErpValor: number;
+  contaErpData: string;
+  contaErpFornecedorOuCliente: string | null;
+}
+
+export interface PreviewAutomaticaResult {
+  matches: MatchProposto[];
+  naoEncontrados: number;
+}
+
+export interface ConfirmarMatchDto {
+  lancamentoId: string;
+  contaErpId: string;
+  tipo: 'PAGAR' | 'RECEBER';
+}
+
 function toDateStr(d: Date | string): string {
   if (d instanceof Date) return d.toISOString().split('T')[0];
   return String(d).split('T')[0];
@@ -166,6 +191,168 @@ export class ConciliacaoService {
     });
 
     return { conciliados, pendentes, naoEncontrados };
+  }
+
+  async previewAutomatica(
+    contaId: string,
+    empresaId: string,
+  ): Promise<PreviewAutomaticaResult> {
+    const lancamentos = await this.lancamentoRepo.find({
+      where: [
+        { contaId, empresaId, statusConciliacao: StatusConciliacao.PENDENTE },
+        { contaId, empresaId, statusConciliacao: StatusConciliacao.NAO_ENCONTRADO },
+      ],
+      order: { data: 'ASC' },
+    });
+
+    const matches: MatchProposto[] = [];
+    let naoEncontrados = 0;
+    const usedContaErpIds = new Set<string>();
+
+    for (const lancamento of lancamentos) {
+      const dataStr = toDateStr(lancamento.data as unknown as Date | string);
+      const valor = Number(lancamento.valor);
+      const dataInicio = shiftDate(dataStr, -5);
+      const dataFim = shiftDate(dataStr, 5);
+
+      let matched = false;
+
+      if (lancamento.tipo === 'CREDITO') {
+        const crs = await this.contaReceberRepo.find({
+          where: {
+            empresaId,
+            valor: valor as any,
+            status: StatusContaReceber.ABERTA,
+            dataRecebimento: Between(dataInicio, dataFim) as any,
+          },
+        });
+        const cr = crs.find((c) => !usedContaErpIds.has(c.id));
+        if (cr) {
+          usedContaErpIds.add(cr.id);
+          matches.push({
+            lancamentoId: lancamento.id,
+            lancamentoData: dataStr,
+            lancamentoDescricao: lancamento.descricao,
+            lancamentoValor: valor,
+            lancamentoTipo: lancamento.tipo,
+            tipo: 'RECEBER',
+            contaErpId: cr.id,
+            contaErpDescricao: cr.descricao,
+            contaErpValor: Number(cr.valor),
+            contaErpData: cr.dataRecebimento,
+            contaErpFornecedorOuCliente: cr.cliente,
+          });
+          matched = true;
+        }
+      } else {
+        const cps = await this.contaPagarRepo.find({
+          where: {
+            empresaId,
+            valor: valor as any,
+            status: StatusContaPagar.ABERTA,
+            dataVencimento: Between(dataInicio, dataFim) as any,
+          },
+        });
+        const cp = cps.find((c) => !usedContaErpIds.has(c.id));
+        if (cp) {
+          usedContaErpIds.add(cp.id);
+          matches.push({
+            lancamentoId: lancamento.id,
+            lancamentoData: dataStr,
+            lancamentoDescricao: lancamento.descricao,
+            lancamentoValor: valor,
+            lancamentoTipo: lancamento.tipo,
+            tipo: 'PAGAR',
+            contaErpId: cp.id,
+            contaErpDescricao: cp.descricao,
+            contaErpValor: Number(cp.valor),
+            contaErpData: cp.dataVencimento,
+            contaErpFornecedorOuCliente: cp.fornecedor,
+          });
+          matched = true;
+        }
+      }
+
+      if (!matched) naoEncontrados++;
+    }
+
+    return { matches, naoEncontrados };
+  }
+
+  async confirmarAutomatica(
+    matchesSelecionados: ConfirmarMatchDto[],
+    contaId: string,
+    empresaId: string,
+    usuarioId: string,
+  ): Promise<ResultadoConciliacao> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    let conciliados = 0;
+    let naoEncontrados = 0;
+
+    try {
+      for (const m of matchesSelecionados) {
+        const lancamento = await queryRunner.manager.findOne(ExtratoLancamento, {
+          where: { id: m.lancamentoId, contaId, empresaId },
+        });
+        if (!lancamento) continue;
+
+        let descricaoConta = '';
+
+        if (m.tipo === 'RECEBER') {
+          const cr = await queryRunner.manager.findOne(ContaReceber, {
+            where: { id: m.contaErpId, empresaId, status: StatusContaReceber.ABERTA },
+          });
+          if (!cr) { naoEncontrados++; continue; }
+          await queryRunner.manager.update(ContaReceber, cr.id, { status: StatusContaReceber.RECEBIDA });
+          descricaoConta = `Conta a Receber: ${cr.descricao}`;
+        } else {
+          const cp = await queryRunner.manager.findOne(ContaPagar, {
+            where: { id: m.contaErpId, empresaId, status: StatusContaPagar.ABERTA },
+          });
+          if (!cp) { naoEncontrados++; continue; }
+          await queryRunner.manager.update(ContaPagar, cp.id, { status: StatusContaPagar.PAGA });
+          descricaoConta = `Conta a Pagar: ${cp.descricao}`;
+        }
+
+        const conc = queryRunner.manager.create(Conciliacao, {
+          empresaId,
+          contaId,
+          lancamentoExtratoId: lancamento.id,
+          tipo: TipoConciliacao.AUTOMATICA,
+          status: StatusConciliacaoRegistro.CONCILIADO,
+          observacao: descricaoConta,
+          usuarioId,
+        });
+        const saved = await queryRunner.manager.save(conc);
+
+        await queryRunner.manager.update(ExtratoLancamento, lancamento.id, {
+          statusConciliacao: StatusConciliacao.CONCILIADO,
+          conciliacaoId: saved.id,
+        });
+        conciliados++;
+      }
+
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
+
+    await this.auditoriaService.registrar({
+      usuarioId,
+      empresaId,
+      acao: AcaoAuditoria.CONCILIACAO_AUTOMATICA,
+      entidade: 'conta_bancaria',
+      entidadeId: contaId,
+      dadosDepois: { conciliados, naoEncontrados },
+    });
+
+    return { conciliados, pendentes: 0, naoEncontrados };
   }
 
   async executarManual(

@@ -7,6 +7,25 @@ export interface ResultadoAutomatica {
   naoEncontrados: number;
 }
 
+export interface MatchProposto {
+  lancamentoId: string;
+  lancamentoData: string;
+  lancamentoDescricao: string | null;
+  lancamentoValor: number;
+  lancamentoTipo: string;
+  tipo: 'PAGAR' | 'RECEBER';
+  contaErpId: string;
+  contaErpDescricao: string;
+  contaErpValor: number;
+  contaErpData: string;
+  contaErpFornecedorOuCliente: string | null;
+}
+
+export interface PreviewAutomaticaResult {
+  matches: MatchProposto[];
+  naoEncontrados: number;
+}
+
 export const conciliacaoApi = {
   listarPendentes: (contaId: string, page = 1, limit = 50) =>
     api
@@ -20,9 +39,17 @@ export const conciliacaoApi = {
       .post(`/conciliacao/manual/${contaId}`, { lancamentoExtratoId, observacao })
       .then((r) => r.data),
 
-  conciliarAutomatica: (contaId: string) =>
+  previewAutomatica: (contaId: string) =>
     api
-      .post<ResultadoAutomatica>(`/conciliacao/automatica/${contaId}`)
+      .post<PreviewAutomaticaResult>(`/conciliacao/automatica/${contaId}/preview`)
+      .then((r) => r.data),
+
+  confirmarAutomatica: (
+    contaId: string,
+    matches: Array<{ lancamentoId: string; contaErpId: string; tipo: 'PAGAR' | 'RECEBER' }>,
+  ) =>
+    api
+      .post<ResultadoAutomatica>(`/conciliacao/automatica/${contaId}/confirmar`, { matches })
       .then((r) => r.data),
 
   vincularErp: (extratoId: string, contaErpId: string, tipo: 'PAGAR' | 'RECEBER') =>

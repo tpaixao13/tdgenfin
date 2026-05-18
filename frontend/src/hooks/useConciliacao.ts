@@ -24,14 +24,27 @@ export function useConciliarManual(contaId: string) {
   });
 }
 
-export function useConciliarAutomatica(contaId: string) {
+export function usePreviewAutomatica(contaId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => conciliacaoApi.conciliarAutomatica(contaId),
+    mutationFn: () => conciliacaoApi.previewAutomatica(contaId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['conciliacao', 'pendentes', contaId] });
+    },
+  });
+}
+
+export function useConfirmarAutomatica(contaId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (matches: Array<{ lancamentoId: string; contaErpId: string; tipo: 'PAGAR' | 'RECEBER' }>) =>
+      conciliacaoApi.confirmarAutomatica(contaId, matches),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['conciliacao', 'pendentes', contaId] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       qc.invalidateQueries({ queryKey: ['despesas'] });
+      qc.invalidateQueries({ queryKey: ['contas-pagar'] });
+      qc.invalidateQueries({ queryKey: ['contas-receber'] });
     },
   });
 }
