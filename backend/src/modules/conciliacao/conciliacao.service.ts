@@ -7,6 +7,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, Between } from 'typeorm';
 import { Conciliacao, TipoConciliacao, StatusConciliacaoRegistro } from './conciliacao.entity';
 import { ExtratoLancamento, StatusConciliacao } from '../extratos/extrato-lancamento.entity';
+import { ContaPagar, StatusContaPagar } from '../contas-pagar/conta-pagar.entity';
+import { ContaReceber, StatusContaReceber } from '../contas-receber/conta-receber.entity';
 import { ConciliacaoManualDto } from './dto/conciliacao-manual.dto';
 import { AuditoriaService } from '../auditoria/auditoria.service';
 import { AcaoAuditoria } from '../auditoria/auditoria-log.entity';
@@ -17,6 +19,17 @@ export interface ResultadoConciliacao {
   naoEncontrados: number;
 }
 
+function toDateStr(d: Date | string): string {
+  if (d instanceof Date) return d.toISOString().split('T')[0];
+  return String(d).split('T')[0];
+}
+
+function shiftDate(dateStr: string, days: number): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split('T')[0];
+}
+
 @Injectable()
 export class ConciliacaoService {
   constructor(
@@ -24,20 +37,25 @@ export class ConciliacaoService {
     private readonly conciliacaoRepo: Repository<Conciliacao>,
     @InjectRepository(ExtratoLancamento)
     private readonly lancamentoRepo: Repository<ExtratoLancamento>,
+    @InjectRepository(ContaPagar)
+    private readonly contaPagarRepo: Repository<ContaPagar>,
+    @InjectRepository(ContaReceber)
+    private readonly contaReceberRepo: Repository<ContaReceber>,
     private readonly dataSource: DataSource,
     private readonly auditoriaService: AuditoriaService,
   ) {}
 
   /**
    * Conciliação automática por conta.
-   * Regra: mesmo valor + datas próximas (±2 dias) + tipo igual.
+   * CRÉDITO no extrato → busca Conta a Receber com mesmo valor e data ±5 dias.
+   * DÉBITO no extrato  → busca Conta a Pagar com mesmo valor e data ±5 dias.
    */
   async executarAutomatica(
     contaId: string,
     empresaId: string,
     usuarioId: string,
   ): Promise<ResultadoConciliacao> {
-    const lancamentosPendentes = await this.lancamentoRepo.find({
+    const lancamentos = await this.lancamentoRepo.find({
       where: [
         { contaId, empresaId, statusConciliacao: StatusConciliacao.PENDENTE },
         { contaId, empresaId, statusConciliacao: StatusConciliacao.NAO_ENCONTRADO },
@@ -53,66 +71,73 @@ export class ConciliacaoService {
     let naoEncontrados = 0;
 
     try {
-      // Reseta NAO_ENCONTRADO → PENDENTE para permitir nova tentativa
-      const idsParaResetar = lancamentosPendentes
-        .filter((l) => l.statusConciliacao === StatusConciliacao.NAO_ENCONTRADO)
-        .map((l) => l.id);
-      if (idsParaResetar.length > 0) {
-        await queryRunner.manager
-          .createQueryBuilder()
-          .update(ExtratoLancamento)
-          .set({ statusConciliacao: StatusConciliacao.PENDENTE })
-          .whereInIds(idsParaResetar)
-          .execute();
-        lancamentosPendentes.forEach((l) => {
-          if (idsParaResetar.includes(l.id)) {
-            l.statusConciliacao = StatusConciliacao.PENDENTE;
-          }
-        });
-      }
+      for (const lancamento of lancamentos) {
+        const dataStr = toDateStr(lancamento.data as unknown as Date | string);
+        const dataInicio = shiftDate(dataStr, -5);
+        const dataFim = shiftDate(dataStr, 5);
+        const valor = Number(lancamento.valor);
 
-      for (const lancamento of lancamentosPendentes) {
-        const dataInicio = new Date(lancamento.data);
-        dataInicio.setDate(dataInicio.getDate() - 2);
+        let conciliacaoId: string | null = null;
 
-        const dataFim = new Date(lancamento.data);
-        dataFim.setDate(dataFim.getDate() + 2);
-
-        // Busca lançamento correspondente: mesmo valor, mesmo tipo, data próxima
-        const correspondente = await queryRunner.manager.findOne(ExtratoLancamento, {
-          where: {
-            contaId,
-            empresaId,
-            valor: lancamento.valor,
-            tipo: lancamento.tipo,
-            data: Between(dataInicio, dataFim),
-            statusConciliacao: StatusConciliacao.PENDENTE,
-          },
-        });
-
-        if (correspondente && correspondente.id !== lancamento.id) {
-          // Cria registro de conciliação
-          const conciliacao = queryRunner.manager.create(Conciliacao, {
-            empresaId,
-            contaId,
-            lancamentoExtratoId: lancamento.id,
-            tipo: TipoConciliacao.AUTOMATICA,
-            status: StatusConciliacaoRegistro.CONCILIADO,
-            usuarioId,
+        if (lancamento.tipo === 'CREDITO') {
+          const cr = await queryRunner.manager.findOne(ContaReceber, {
+            where: {
+              empresaId,
+              valor: valor as any,
+              status: StatusContaReceber.ABERTA,
+              dataRecebimento: Between(dataInicio, dataFim) as any,
+            },
           });
-          const conciliacaoSalva = await queryRunner.manager.save(conciliacao);
+          if (cr) {
+            const conc = queryRunner.manager.create(Conciliacao, {
+              empresaId,
+              contaId,
+              lancamentoExtratoId: lancamento.id,
+              tipo: TipoConciliacao.AUTOMATICA,
+              status: StatusConciliacaoRegistro.CONCILIADO,
+              observacao: `Conta a Receber: ${cr.descricao}`,
+              usuarioId,
+            });
+            const saved = await queryRunner.manager.save(conc);
+            conciliacaoId = saved.id;
+            await queryRunner.manager.update(ContaReceber, cr.id, {
+              status: StatusContaReceber.RECEBIDA,
+            });
+            conciliados++;
+          }
+        } else {
+          const cp = await queryRunner.manager.findOne(ContaPagar, {
+            where: {
+              empresaId,
+              valor: valor as any,
+              status: StatusContaPagar.ABERTA,
+              dataVencimento: Between(dataInicio, dataFim) as any,
+            },
+          });
+          if (cp) {
+            const conc = queryRunner.manager.create(Conciliacao, {
+              empresaId,
+              contaId,
+              lancamentoExtratoId: lancamento.id,
+              tipo: TipoConciliacao.AUTOMATICA,
+              status: StatusConciliacaoRegistro.CONCILIADO,
+              observacao: `Conta a Pagar: ${cp.descricao}`,
+              usuarioId,
+            });
+            const saved = await queryRunner.manager.save(conc);
+            conciliacaoId = saved.id;
+            await queryRunner.manager.update(ContaPagar, cp.id, {
+              status: StatusContaPagar.PAGA,
+            });
+            conciliados++;
+          }
+        }
 
-          // Atualiza status dos lançamentos
+        if (conciliacaoId) {
           await queryRunner.manager.update(ExtratoLancamento, lancamento.id, {
             statusConciliacao: StatusConciliacao.CONCILIADO,
-            conciliacaoId: conciliacaoSalva.id,
+            conciliacaoId,
           });
-          await queryRunner.manager.update(ExtratoLancamento, correspondente.id, {
-            statusConciliacao: StatusConciliacao.CONCILIADO,
-            conciliacaoId: conciliacaoSalva.id,
-          });
-
-          conciliados++;
         } else {
           await queryRunner.manager.update(ExtratoLancamento, lancamento.id, {
             statusConciliacao: StatusConciliacao.NAO_ENCONTRADO,
@@ -129,7 +154,7 @@ export class ConciliacaoService {
       await queryRunner.release();
     }
 
-    const pendentes = lancamentosPendentes.length - conciliados - naoEncontrados;
+    const pendentes = lancamentos.length - conciliados - naoEncontrados;
 
     await this.auditoriaService.registrar({
       usuarioId,
