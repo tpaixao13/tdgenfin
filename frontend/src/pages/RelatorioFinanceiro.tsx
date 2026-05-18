@@ -19,7 +19,7 @@ export default function RelatorioFinanceiro() {
   const { empresaAtiva } = useEmpresa();
   const [periodo, setPeriodo] = useState(periodoInicial);
 
-  const empresaId = user?.role !== 'SUPER_ADMIN' ? empresaAtiva?.id : undefined;
+  const empresaId = empresaAtiva?.id;
   const canExport = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN_EMPRESA';
 
   const { data, isLoading, isError, refetch } = useQuery({

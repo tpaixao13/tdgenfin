@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Res, Headers, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -23,9 +23,10 @@ export class RelatoriosController {
   dre(
     @Query() query: RelatorioQueryDto,
     @CurrentUser() user: { role: Role; empresaId: string },
+    @Headers('x-empresa-id') header: string,
   ) {
     const empresaId = user.role === Role.SUPER_ADMIN
-      ? (query.empresaId ?? user.empresaId)
+      ? (query.empresaId ?? header ?? user.empresaId)
       : user.empresaId;
     return this.relatoriosService.calcularDre(empresaId, query.dataInicio, query.dataFim);
   }
@@ -34,9 +35,10 @@ export class RelatoriosController {
   financeiro(
     @Query() query: RelatorioQueryDto,
     @CurrentUser() user: { role: Role; empresaId: string },
+    @Headers('x-empresa-id') header: string,
   ) {
     const empresaId = user.role === Role.SUPER_ADMIN
-      ? (query.empresaId ?? user.empresaId)
+      ? (query.empresaId ?? header ?? user.empresaId)
       : user.empresaId;
     return this.relatoriosService.relatorioFinanceiro(empresaId, query.dataInicio, query.dataFim);
   }
@@ -46,10 +48,11 @@ export class RelatoriosController {
   async exportar(
     @Query() query: ExportarQueryDto,
     @CurrentUser() user: { role: Role; empresaId: string },
+    @Headers('x-empresa-id') header: string,
     @Res() res: Response,
   ) {
     const empresaId = user.role === Role.SUPER_ADMIN
-      ? (query.empresaId ?? user.empresaId)
+      ? (query.empresaId ?? header ?? user.empresaId)
       : user.empresaId;
 
     const tipo = query.tipo ?? 'geral';

@@ -3,10 +3,12 @@ import {
   Get,
   Param,
   Query,
+  Headers,
   UseGuards,
   ParseUUIDPipe,
   ParseIntPipe,
   DefaultValuePipe,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -20,24 +22,36 @@ import { DashboardService } from './dashboard.service';
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
+  private resolveEmpresaId(user: { role: Role; empresaId: string }, header: string): string {
+    if (user.role === Role.SUPER_ADMIN) {
+      if (!header) throw new BadRequestException('Selecione uma empresa antes de continuar');
+      return header;
+    }
+    return user.empresaId;
+  }
+
   @Get('conta/:contaId')
   resumoConta(
     @Param('contaId', ParseUUIDPipe) contaId: string,
     @CurrentUser() user: { role: Role; empresaId: string },
+    @Headers('x-empresa-id') header: string,
     @Query('dataInicio') dataInicio?: string,
     @Query('dataFim') dataFim?: string,
   ) {
     return this.dashboardService.resumoPorConta(
       contaId,
-      user.empresaId,
+      this.resolveEmpresaId(user, header),
       dataInicio ? new Date(dataInicio) : undefined,
       dataFim ? new Date(dataFim) : undefined,
     );
   }
 
   @Get('empresa')
-  resumoEmpresa(@CurrentUser() user: { role: Role; empresaId: string }) {
-    return this.dashboardService.resumoPorEmpresa(user.empresaId);
+  resumoEmpresa(
+    @CurrentUser() user: { role: Role; empresaId: string },
+    @Headers('x-empresa-id') header: string,
+  ) {
+    return this.dashboardService.resumoPorEmpresa(this.resolveEmpresaId(user, header));
   }
 
   @Get('empresas')
@@ -50,8 +64,9 @@ export class DashboardController {
   evolucaoSaldo(
     @Param('contaId', ParseUUIDPipe) contaId: string,
     @CurrentUser() user: { role: Role; empresaId: string },
+    @Headers('x-empresa-id') header: string,
     @Query('meses', new DefaultValuePipe(6), ParseIntPipe) meses: number,
   ) {
-    return this.dashboardService.evolucaoSaldo(contaId, user.empresaId, meses);
+    return this.dashboardService.evolucaoSaldo(contaId, this.resolveEmpresaId(user, header), meses);
   }
 }

@@ -18,7 +18,7 @@ export default function Dre() {
   const { empresaAtiva } = useEmpresa();
   const [periodo, setPeriodo] = useState(periodoInicial);
 
-  const empresaId = user?.role !== 'SUPER_ADMIN' ? empresaAtiva?.id : undefined;
+  const empresaId = empresaAtiva?.id;
 
   const { data: dre, isLoading, isError, refetch } = useQuery({
     queryKey: ['dre', empresaId, periodo.dataInicio, periodo.dataFim],
