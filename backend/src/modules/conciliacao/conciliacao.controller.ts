@@ -6,10 +6,12 @@ import {
   Param,
   Body,
   Query,
+  Headers,
   UseGuards,
   ParseUUIDPipe,
   ParseIntPipe,
   DefaultValuePipe,
+  BadRequestException,
 } from '@nestjs/common';
 import { IsArray, IsUUID, IsIn, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -47,6 +49,14 @@ class ConfirmarAutomaticaDto {
 export class ConciliacaoController {
   constructor(private readonly conciliacaoService: ConciliacaoService) {}
 
+  private resolveEmpresaId(user: { role: Role; empresaId: string }, header: string): string {
+    if (user.role === Role.SUPER_ADMIN) {
+      if (!header) throw new BadRequestException('Selecione uma empresa antes de continuar');
+      return header;
+    }
+    return user.empresaId;
+  }
+
   @Post('automatica/:contaId/preview')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN_EMPRESA)
   @RequerPermissao(ChavePermissao.CONCILIACAO_EXECUTAR)
@@ -54,8 +64,9 @@ export class ConciliacaoController {
   previewAutomatica(
     @Param('contaId', ParseUUIDPipe) contaId: string,
     @CurrentUser() user: { role: Role; empresaId: string },
+    @Headers('x-empresa-id') header: string,
   ) {
-    return this.conciliacaoService.previewAutomatica(contaId, user.empresaId);
+    return this.conciliacaoService.previewAutomatica(contaId, this.resolveEmpresaId(user, header));
   }
 
   @Post('automatica/:contaId/confirmar')
@@ -66,8 +77,9 @@ export class ConciliacaoController {
     @Param('contaId', ParseUUIDPipe) contaId: string,
     @Body() dto: ConfirmarAutomaticaDto,
     @CurrentUser() user: { id: string; role: Role; empresaId: string },
+    @Headers('x-empresa-id') header: string,
   ) {
-    return this.conciliacaoService.confirmarAutomatica(dto.matches, contaId, user.empresaId, user.id);
+    return this.conciliacaoService.confirmarAutomatica(dto.matches, contaId, this.resolveEmpresaId(user, header), user.id);
   }
 
   @Post('automatica/:contaId')
@@ -77,8 +89,9 @@ export class ConciliacaoController {
   executarAutomatica(
     @Param('contaId', ParseUUIDPipe) contaId: string,
     @CurrentUser() user: { id: string; role: Role; empresaId: string },
+    @Headers('x-empresa-id') header: string,
   ) {
-    return this.conciliacaoService.executarAutomatica(contaId, user.empresaId, user.id);
+    return this.conciliacaoService.executarAutomatica(contaId, this.resolveEmpresaId(user, header), user.id);
   }
 
   @Post('manual/:contaId')
@@ -89,8 +102,9 @@ export class ConciliacaoController {
     @Param('contaId', ParseUUIDPipe) contaId: string,
     @Body() dto: ConciliacaoManualDto,
     @CurrentUser() user: { id: string; role: Role; empresaId: string },
+    @Headers('x-empresa-id') header: string,
   ) {
-    return this.conciliacaoService.executarManual(dto, contaId, user.empresaId, user.id);
+    return this.conciliacaoService.executarManual(dto, contaId, this.resolveEmpresaId(user, header), user.id);
   }
 
   @Delete('estornar/:conciliacaoId')
@@ -98,17 +112,19 @@ export class ConciliacaoController {
   estornar(
     @Param('conciliacaoId', ParseUUIDPipe) conciliacaoId: string,
     @CurrentUser() user: { id: string; role: Role; empresaId: string },
+    @Headers('x-empresa-id') header: string,
   ) {
-    return this.conciliacaoService.estornar(conciliacaoId, user.empresaId, user.id);
+    return this.conciliacaoService.estornar(conciliacaoId, this.resolveEmpresaId(user, header), user.id);
   }
 
   @Get()
   listar(
     @CurrentUser() user: { role: Role; empresaId: string },
+    @Headers('x-empresa-id') header: string,
     @Query('contaId') contaId?: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
     @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit = 50,
   ) {
-    return this.conciliacaoService.listar(user.empresaId, contaId, page, limit);
+    return this.conciliacaoService.listar(this.resolveEmpresaId(user, header), contaId, page, limit);
   }
 }
