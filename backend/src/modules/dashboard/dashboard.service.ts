@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { ContaBancaria } from '../contas-bancarias/conta-bancaria.entity';
 import { ExtratoLancamento, TipoLancamento, StatusConciliacao } from '../extratos/extrato-lancamento.entity';
+import { ContaPagar, StatusContaPagar } from '../contas-pagar/conta-pagar.entity';
+import { ContaReceber, StatusContaReceber } from '../contas-receber/conta-receber.entity';
 
 export interface ResumoContaPeriodo {
   contaId: string;
@@ -28,6 +30,35 @@ export interface ResumoEmpresa {
   totalSaidas: number;
 }
 
+export interface ResumoReal {
+  saldo: number;
+  entradas: number;
+  saidas: number;
+  dataInicio: string;
+  dataFim: string;
+}
+
+export interface ResumoPrevisao {
+  aReceber: number;
+  aPagar: number;
+  resultado: number;
+}
+
+export interface PontoFluxoCaixa {
+  data: string;
+  saldo: number;
+  descricao: string;
+  tipo: 'INICIO' | 'ENTRADA' | 'SAIDA';
+}
+
+export interface Simulacao {
+  saldoAtual: number;
+  saldoProjetado: number;
+  totalEntradas: number;
+  totalSaidas: number;
+  dataFim: string;
+}
+
 @Injectable()
 export class DashboardService {
   constructor(
@@ -35,6 +66,10 @@ export class DashboardService {
     private readonly contaRepo: Repository<ContaBancaria>,
     @InjectRepository(ExtratoLancamento)
     private readonly lancamentoRepo: Repository<ExtratoLancamento>,
+    @InjectRepository(ContaPagar)
+    private readonly contaPagarRepo: Repository<ContaPagar>,
+    @InjectRepository(ContaReceber)
+    private readonly contaReceberRepo: Repository<ContaReceber>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -149,5 +184,149 @@ export class DashboardService {
       ORDER BY mes ASC`,
       [contaId, empresaId, meses],
     );
+  }
+
+  private hoje(): string {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  private primeiroDiaMes(): string {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+  }
+
+  async resumoReal(empresaId: string, dataInicio?: string, dataFim?: string): Promise<ResumoReal> {
+    const inicio = dataInicio ?? this.primeiroDiaMes();
+    const fim = dataFim ?? this.hoje();
+
+    const [saldoRow] = await this.dataSource.query(
+      `SELECT COALESCE(SUM(saldo_atual), 0) as saldo
+       FROM conta_bancaria
+       WHERE empresa_id = $1 AND ativo = true`,
+      [empresaId],
+    );
+
+    const [movRow] = await this.dataSource.query(
+      `SELECT
+         COALESCE(SUM(CASE WHEN tipo = 'CREDITO' THEN valor ELSE 0 END), 0) as entradas,
+         COALESCE(SUM(CASE WHEN tipo = 'DEBITO' THEN valor ELSE 0 END), 0) as saidas
+       FROM extrato_lancamento
+       WHERE empresa_id = $1
+         AND status_conciliacao = 'CONCILIADO'
+         AND data >= $2 AND data <= $3`,
+      [empresaId, inicio, fim],
+    );
+
+    return {
+      saldo: Number(saldoRow.saldo),
+      entradas: Number(movRow.entradas),
+      saidas: Number(movRow.saidas),
+      dataInicio: inicio,
+      dataFim: fim,
+    };
+  }
+
+  async resumoPrevisao(empresaId: string): Promise<ResumoPrevisao> {
+    const [pagarRow] = await this.dataSource.query(
+      `SELECT COALESCE(SUM(valor), 0) as a_pagar
+       FROM conta_pagar
+       WHERE empresa_id = $1 AND status = 'ABERTA'`,
+      [empresaId],
+    );
+
+    const [receberRow] = await this.dataSource.query(
+      `SELECT COALESCE(SUM(valor), 0) as a_receber
+       FROM conta_receber
+       WHERE empresa_id = $1 AND status = 'ABERTA'`,
+      [empresaId],
+    );
+
+    const aReceber = Number(receberRow.a_receber);
+    const aPagar = Number(pagarRow.a_pagar);
+
+    return { aReceber, aPagar, resultado: aReceber - aPagar };
+  }
+
+  async fluxoCaixa(empresaId: string): Promise<PontoFluxoCaixa[]> {
+    const hoje = this.hoje();
+
+    const [saldoRow] = await this.dataSource.query(
+      `SELECT COALESCE(SUM(saldo_atual), 0) as saldo
+       FROM conta_bancaria
+       WHERE empresa_id = $1 AND ativo = true`,
+      [empresaId],
+    );
+
+    const saldoAtual = Number(saldoRow.saldo);
+
+    const eventos = await this.dataSource.query(
+      `SELECT data_vencimento as data, valor, descricao, 'SAIDA' as tipo
+       FROM conta_pagar
+       WHERE empresa_id = $1 AND status = 'ABERTA' AND data_vencimento >= $2
+         AND data_vencimento <= ($2::date + INTERVAL '90 days')
+       UNION ALL
+       SELECT data_recebimento as data, valor, descricao, 'ENTRADA' as tipo
+       FROM conta_receber
+       WHERE empresa_id = $1 AND status = 'ABERTA' AND data_recebimento >= $2
+         AND data_recebimento <= ($2::date + INTERVAL '90 days')
+       ORDER BY data ASC`,
+      [empresaId, hoje],
+    );
+
+    const pontos: PontoFluxoCaixa[] = [
+      { data: hoje, saldo: saldoAtual, descricao: 'Saldo atual', tipo: 'INICIO' },
+    ];
+
+    let saldoAcumulado = saldoAtual;
+    for (const ev of eventos) {
+      const valor = Number(ev.valor);
+      saldoAcumulado = ev.tipo === 'ENTRADA'
+        ? saldoAcumulado + valor
+        : saldoAcumulado - valor;
+
+      pontos.push({
+        data: ev.data instanceof Date ? ev.data.toISOString().slice(0, 10) : String(ev.data).slice(0, 10),
+        saldo: saldoAcumulado,
+        descricao: ev.descricao,
+        tipo: ev.tipo as 'ENTRADA' | 'SAIDA',
+      });
+    }
+
+    return pontos;
+  }
+
+  async simulacao(empresaId: string, dataFim: string): Promise<Simulacao> {
+    const [saldoRow] = await this.dataSource.query(
+      `SELECT COALESCE(SUM(saldo_atual), 0) as saldo
+       FROM conta_bancaria
+       WHERE empresa_id = $1 AND ativo = true`,
+      [empresaId],
+    );
+
+    const [pagarRow] = await this.dataSource.query(
+      `SELECT COALESCE(SUM(valor), 0) as total
+       FROM conta_pagar
+       WHERE empresa_id = $1 AND status = 'ABERTA' AND data_vencimento <= $2`,
+      [empresaId, dataFim],
+    );
+
+    const [receberRow] = await this.dataSource.query(
+      `SELECT COALESCE(SUM(valor), 0) as total
+       FROM conta_receber
+       WHERE empresa_id = $1 AND status = 'ABERTA' AND data_recebimento <= $2`,
+      [empresaId, dataFim],
+    );
+
+    const saldoAtual = Number(saldoRow.saldo);
+    const totalEntradas = Number(receberRow.total);
+    const totalSaidas = Number(pagarRow.total);
+
+    return {
+      saldoAtual,
+      saldoProjetado: saldoAtual + totalEntradas - totalSaidas,
+      totalEntradas,
+      totalSaidas,
+      dataFim,
+    };
   }
 }

@@ -69,4 +69,40 @@ export class DashboardController {
   ) {
     return this.dashboardService.evolucaoSaldo(contaId, this.resolveEmpresaId(user, header), meses);
   }
+
+  @Get('real')
+  resumoReal(
+    @CurrentUser() user: { role: Role; empresaId: string },
+    @Headers('x-empresa-id') header: string,
+    @Query('dataInicio') dataInicio?: string,
+    @Query('dataFim') dataFim?: string,
+  ) {
+    return this.dashboardService.resumoReal(this.resolveEmpresaId(user, header), dataInicio, dataFim);
+  }
+
+  @Get('previsao')
+  resumoPrevisao(
+    @CurrentUser() user: { role: Role; empresaId: string },
+    @Headers('x-empresa-id') header: string,
+  ) {
+    return this.dashboardService.resumoPrevisao(this.resolveEmpresaId(user, header));
+  }
+
+  @Get('fluxo-caixa')
+  fluxoCaixa(
+    @CurrentUser() user: { role: Role; empresaId: string },
+    @Headers('x-empresa-id') header: string,
+  ) {
+    return this.dashboardService.fluxoCaixa(this.resolveEmpresaId(user, header));
+  }
+
+  @Get('simulacao')
+  simulacao(
+    @CurrentUser() user: { role: Role; empresaId: string },
+    @Headers('x-empresa-id') header: string,
+    @Query('dataFim') dataFim: string,
+  ) {
+    if (!dataFim) return { error: 'dataFim é obrigatório' };
+    return this.dashboardService.simulacao(this.resolveEmpresaId(user, header), dataFim);
+  }
 }

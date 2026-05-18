@@ -160,6 +160,35 @@ export interface ResumoEmpresa {
   totalSaidas: number;
 }
 
+export interface ResumoReal {
+  saldo: number;
+  entradas: number;
+  saidas: number;
+  dataInicio: string;
+  dataFim: string;
+}
+
+export interface ResumoPrevisao {
+  aReceber: number;
+  aPagar: number;
+  resultado: number;
+}
+
+export interface PontoFluxoCaixa {
+  data: string;
+  saldo: number;
+  descricao: string;
+  tipo: 'INICIO' | 'ENTRADA' | 'SAIDA';
+}
+
+export interface Simulacao {
+  saldoAtual: number;
+  saldoProjetado: number;
+  totalEntradas: number;
+  totalSaidas: number;
+  dataFim: string;
+}
+
 // ── Lançamentos ───────────────────────────────────────
 export type TipoLancamento = 'CREDITO' | 'DEBITO';
 export type StatusConciliacao = 'CONCILIADO' | 'PENDENTE' | 'NAO_ENCONTRADO';

@@ -10,14 +10,18 @@ import {
   GitMerge,
   CheckCheck,
   Clock,
+  CalendarClock,
+  BarChart2,
 } from 'lucide-react';
 import { contasApi } from '../api/contas';
 import { useAuth } from '../contexts/AuthContext';
 import { useEmpresa } from '../contexts/EmpresaContext';
 import { useDashboardFinanceiro } from '../hooks/useDashboardFinanceiro';
+import { useDashboardReal, useDashboardPrevisao, useDashboardFluxo, useDashboardSimulacao } from '../hooks/useDashboardAvancado';
 import FiltroPeriodo, { type Periodo } from '../components/FiltroPeriodo';
 import CardIndicador from '../components/CardIndicador';
 import ResumoPorConta from '../components/ResumoPorConta';
+import FluxoCaixaChart from '../components/FluxoCaixaChart';
 import type { ContaBancaria } from '../types';
 
 function isoHoje() {
@@ -66,11 +70,20 @@ export default function Dashboard() {
     }
   }, [contas, contaIdAtual]);
 
+  const [dataSimulacao, setDataSimulacao] = useState('');
+  const [dataSimulacaoAtiva, setDataSimulacaoAtiva] = useState('');
+
   const { resumoConta, resumoEmpresa } = useDashboardFinanceiro(
     contaIdAtual,
     periodo,
     empresaAtiva?.id,
   );
+
+  const empresaId = empresaAtiva?.id;
+  const { data: dadosReal } = useDashboardReal(empresaId, periodo.dataInicio, periodo.dataFim);
+  const { data: dadosPrevisao } = useDashboardPrevisao(empresaId);
+  const { data: dadosFluxo } = useDashboardFluxo(empresaId);
+  const { data: dadosSimulacao, isLoading: simulacaoLoading } = useDashboardSimulacao(empresaId, dataSimulacaoAtiva);
 
   const contaAtiva = contas?.find((c) => c.id === contaIdAtual);
   const resumo = resumoConta.data;
@@ -128,6 +141,158 @@ export default function Dashboard() {
       {hasEmpresa && contas && contas.length === 0 && (
         <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-lg p-4 text-sm">
           Nenhuma conta bancária cadastrada para esta empresa.
+        </div>
+      )}
+
+      {/* ── Real vs Previsão ── */}
+      {hasEmpresa && empresaAtiva && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Bloco Real */}
+          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-green-500 shrink-0" />
+              <h3 className="text-sm font-semibold text-gray-700">💰 Caixa Real</h3>
+              <span className="ml-auto text-xs text-gray-400">extrato conciliado</span>
+            </div>
+            {!dadosReal ? (
+              <p className="text-sm text-gray-400 animate-pulse">Carregando...</p>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-500">Saldo atual (contas ativas)</span>
+                  <span className={`text-base font-bold ${dadosReal.saldo >= 0 ? 'text-blue-700' : 'text-red-600'}`}>
+                    {brl(dadosReal.saldo)}
+                  </span>
+                </div>
+                <div className="h-px bg-gray-100" />
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                    <TrendingUp size={12} className="text-green-500" />
+                    Entradas conciliadas no período
+                  </span>
+                  <span className="text-sm font-semibold text-green-600">{brl(dadosReal.entradas)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                    <TrendingDown size={12} className="text-red-400" />
+                    Saídas conciliadas no período
+                  </span>
+                  <span className="text-sm font-semibold text-red-600">{brl(dadosReal.saidas)}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Bloco Previsão */}
+          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0" />
+              <h3 className="text-sm font-semibold text-gray-700">📊 Previsão (ERP)</h3>
+              <span className="ml-auto text-xs text-gray-400">contas abertas</span>
+            </div>
+            {!dadosPrevisao ? (
+              <p className="text-sm text-gray-400 animate-pulse">Carregando...</p>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                    <TrendingUp size={12} className="text-green-500" />
+                    A receber (em aberto)
+                  </span>
+                  <span className="text-sm font-semibold text-green-600">{brl(dadosPrevisao.aReceber)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                    <TrendingDown size={12} className="text-red-400" />
+                    A pagar (em aberto)
+                  </span>
+                  <span className="text-sm font-semibold text-red-600">{brl(dadosPrevisao.aPagar)}</span>
+                </div>
+                <div className="h-px bg-gray-100" />
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-500">Resultado futuro previsto</span>
+                  <span className={`text-base font-bold ${dadosPrevisao.resultado >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {brl(dadosPrevisao.resultado)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Fluxo de Caixa Projetado ── */}
+      {hasEmpresa && empresaAtiva && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart2 size={16} className="text-blue-600" />
+            <h3 className="text-sm font-semibold text-gray-700">Fluxo de Caixa Projetado</h3>
+            <span className="ml-auto text-xs text-gray-400">próximos 90 dias</span>
+          </div>
+          {!dadosFluxo ? (
+            <div className="flex items-center justify-center h-48 text-gray-400 text-sm animate-pulse">
+              Carregando projeção...
+            </div>
+          ) : (
+            <FluxoCaixaChart dados={dadosFluxo} />
+          )}
+        </div>
+      )}
+
+      {/* ── Simulação de Saldo Futuro ── */}
+      {hasEmpresa && empresaAtiva && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <CalendarClock size={16} className="text-violet-600" />
+            <h3 className="text-sm font-semibold text-gray-700">Simulação de Saldo Futuro</h3>
+          </div>
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Simular até</label>
+              <input
+                type="date"
+                value={dataSimulacao}
+                onChange={(e) => setDataSimulacao(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
+            </div>
+            <button
+              onClick={() => setDataSimulacaoAtiva(dataSimulacao)}
+              disabled={!dataSimulacao}
+              className="bg-violet-600 hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            >
+              Simular
+            </button>
+          </div>
+
+          {simulacaoLoading && (
+            <p className="text-sm text-gray-400 mt-4 animate-pulse">Calculando...</p>
+          )}
+
+          {dadosSimulacao && !simulacaoLoading && (
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-400 mb-1">Saldo Atual</p>
+                <p className={`text-sm font-bold ${dadosSimulacao.saldoAtual >= 0 ? 'text-blue-700' : 'text-red-600'}`}>
+                  {brl(dadosSimulacao.saldoAtual)}
+                </p>
+              </div>
+              <div className="bg-green-50 rounded-lg p-3">
+                <p className="text-xs text-gray-400 mb-1">+ Entradas previstas</p>
+                <p className="text-sm font-bold text-green-600">{brl(dadosSimulacao.totalEntradas)}</p>
+              </div>
+              <div className="bg-red-50 rounded-lg p-3">
+                <p className="text-xs text-gray-400 mb-1">− Saídas previstas</p>
+                <p className="text-sm font-bold text-red-600">{brl(dadosSimulacao.totalSaidas)}</p>
+              </div>
+              <div className={`rounded-lg p-3 ${dadosSimulacao.saldoProjetado >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}>
+                <p className="text-xs text-gray-400 mb-1">Saldo Projetado</p>
+                <p className={`text-sm font-bold ${dadosSimulacao.saldoProjetado >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                  {brl(dadosSimulacao.saldoProjetado)}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

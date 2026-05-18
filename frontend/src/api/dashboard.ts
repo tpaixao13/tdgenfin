@@ -1,5 +1,5 @@
 import { api } from './client';
-import type { ResumoContaPeriodo, ResumoEmpresa } from '../types';
+import type { ResumoContaPeriodo, ResumoEmpresa, ResumoReal, ResumoPrevisao, PontoFluxoCaixa, Simulacao } from '../types';
 
 export const dashboardApi = {
   resumoConta: (contaId: string, dataInicio?: string, dataFim?: string) =>
@@ -22,4 +22,18 @@ export const dashboardApi = {
         { params: { meses } },
       )
       .then((r) => r.data),
+
+  resumoReal: (dataInicio?: string, dataFim?: string) =>
+    api
+      .get<ResumoReal>('/dashboard/real', { params: { dataInicio, dataFim } })
+      .then((r) => r.data),
+
+  resumoPrevisao: () =>
+    api.get<ResumoPrevisao>('/dashboard/previsao').then((r) => r.data),
+
+  fluxoCaixa: () =>
+    api.get<PontoFluxoCaixa[]>('/dashboard/fluxo-caixa').then((r) => r.data),
+
+  simulacao: (dataFim: string) =>
+    api.get<Simulacao>('/dashboard/simulacao', { params: { dataFim } }).then((r) => r.data),
 };
