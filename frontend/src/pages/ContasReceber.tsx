@@ -73,7 +73,7 @@ export default function ContasReceber() {
 
       {statusFiltro && (
         <div className="bg-blue-50 border border-blue-200 text-blue-700 rounded-lg px-4 py-2 text-sm flex items-center justify-between">
-          <span>Filtrando por: <strong>{statusFiltro === 'ABERTA' ? 'Em aberto' : statusFiltro}</strong></span>
+          <span>Filtrando por: <strong>{{ ABERTA: 'Em aberto', RECEBIDA: 'Recebidas', CANCELADA: 'Canceladas' }[statusFiltro] ?? statusFiltro}</strong></span>
           <a href="/contas-receber" className="text-blue-500 hover:underline text-xs">Limpar filtro</a>
         </div>
       )}

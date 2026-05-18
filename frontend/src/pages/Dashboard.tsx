@@ -343,7 +343,7 @@ export default function Dashboard() {
                     icone={<TrendingUp size={16} />}
                     variante="green"
                     subtitulo="Créditos no período"
-                    onClick={() => navigate('/contas-receber?status=ABERTA')}
+                    onClick={() => navigate('/contas-receber?status=RECEBIDA')}
                   />
                   <CardIndicador
                     titulo="Total Saídas"
@@ -351,7 +351,7 @@ export default function Dashboard() {
                     icone={<TrendingDown size={16} />}
                     variante="red"
                     subtitulo="Débitos no período"
-                    onClick={() => navigate('/contas-pagar?status=ABERTA')}
+                    onClick={() => navigate('/contas-pagar?status=PAGA')}
                   />
                   <CardIndicador
                     titulo="Saldo Atual"
